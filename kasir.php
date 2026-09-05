@@ -142,7 +142,8 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                             <select name="product_id" id="select-produk" class="form-select" required>
                                 <option value="">-- Cari Produk --</option>
                                 <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
-                                    <option value="<?= $p['id'] ?>">
+                                    <!-- DITAMBAHKAN ATRIBUT data-stok DI SINI -->
+                                    <option value="<?= $p['id'] ?>" data-stok="<?= $p['stok'] ?>">
                                         <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
                                     </option>
                                 <?php endwhile; ?>
@@ -150,7 +151,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                         </div>
                         <div class="mb-3">
                             <label class="form-label small">Jumlah (Qty)</label>
-                            <input type="number" name="qty" class="form-control" value="1" min="1" required>
+                            <input type="number" name="qty" id="input_qty" class="form-control" value="1" min="1" required>
                         </div>
                         <button type="submit" name="tambah_keranjang" class="btn btn-primary w-100 fw-bold">+</button>
                     </form>
@@ -249,6 +250,21 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             theme: 'bootstrap-5',
             placeholder: '-- Cari Produk --',
             allowClear: true
+        });
+
+        // DITAMBAHKAN: Otomatis membatasi input Qty sesuai stok produk yang dipilih
+        $('#select-produk').on('change', function() {
+            const stokTersedia = $(this).find(':selected').data('stok');
+            const inputQty = $('#input_qty');
+            
+            if (stokTersedia !== undefined) {
+                inputQty.attr('max', stokTersedia);
+                if (parseInt(inputQty.val()) > stokTersedia) {
+                    inputQty.val(stokTersedia);
+                }
+            } else {
+                inputQty.removeAttr('max');
+            }
         });
     });
 
