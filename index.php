@@ -2,9 +2,13 @@
 session_start();
 require_once 'koneksi.php';
 
-// Jika pengguna sudah login, langsung arahkan ke halaman kasir
+// Redirect jika sudah login
 if (isset($_SESSION['user_id'])) {
-    header("Location: kasir.php");
+    if ($_SESSION['role'] === 'owner') {
+        header("Location: admin.php");
+    } else {
+        header("Location: kasir.php");
+    }
     exit;
 }
 
@@ -12,7 +16,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
-    $password = md5($_POST['password']); // Menggunakan MD5 sesuai data testing awal
+    $password = md5($_POST['password']);
 
     $query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
     $result = mysqli_query($koneksi, $query);
@@ -20,12 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mysqli_num_rows($result) === 1) {
         $user = mysqli_fetch_assoc($result);
         
-        // Simpan data login ke session
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['nama']    = $user['nama'];
         $_SESSION['role']    = $user['role'];
 
-        header("Location: kasir.php");
+        // Arahkan halaman sesuai role
+        if ($user['role'] === 'owner') {
+            header("Location: admin.php");
+        } else {
+            header("Location: kasir.php");
+        }
         exit;
     } else {
         $error = "Username atau password salah!";
