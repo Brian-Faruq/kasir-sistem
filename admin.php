@@ -93,6 +93,7 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
         <a class="navbar-brand fw-bold" href="#">POS UMKM - Admin Panel</a>
         <div class="d-flex text-white align-items-center">
             <span class="me-3">Halo, <strong><?= $_SESSION['nama'] ?></strong> (Owner)</span>
+            <a href="laporan.php" class="btn btn-outline-warning btn-sm me-2">Laporan Keuangan</a>
             <a href="kasir.php" class="btn btn-outline-info btn-sm me-2">Ke Kasir</a>
             <a href="logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
         </div>
