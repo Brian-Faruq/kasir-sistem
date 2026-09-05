@@ -84,7 +84,9 @@ if (isset($_POST['proses_transaksi'])) {
 
             // C. Bersihkan keranjang
             $_SESSION['cart'] = [];
-            echo "<script>alert('Transaksi Berhasil! No Nota: $no_nota'); window.location='kasir.php';</script>";
+            // Langsung arahkan ke halaman cetak nota
+            header("Location: cetak_nota.php?id=" . $transaction_id);
+            exit;
         }
     }
 }
