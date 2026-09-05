@@ -27,7 +27,45 @@ if (isset($_POST['tambah_produk'])) {
     }
 }
 
-// 2. HITUNG RINGKASAN DASHBOARD
+// 2. PROSES EDIT PRODUK
+if (isset($_POST['edit_produk'])) {
+    $id          = intval($_POST['id']);
+    $kode_barang = mysqli_real_escape_string($koneksi, $_POST['kode_barang']);
+    $nama_barang = mysqli_real_escape_string($koneksi, $_POST['nama_barang']);
+    $category_id = intval($_POST['category_id']);
+    $harga_beli  = floatval($_POST['harga_beli']);
+    $harga_jual  = floatval($_POST['harga_jual']);
+    $stok        = intval($_POST['stok']);
+
+    $query_update = "UPDATE products SET 
+                        category_id = $category_id,
+                        kode_barang = '$kode_barang',
+                        nama_barang = '$nama_barang',
+                        harga_beli = $harga_beli,
+                        harga_jual = $harga_jual,
+                        stok = $stok 
+                     WHERE id = $id";
+
+    if (mysqli_query($koneksi, $query_update)) {
+        echo "<script>alert('Data produk berhasil diperbarui!'); window.location='admin.php';</script>";
+    } else {
+        echo "<script>alert('Gagal memperbarui produk!');</script>";
+    }
+}
+
+// 3. PROSES HAPUS PRODUK
+if (isset($_GET['hapus'])) {
+    $id_hapus = intval($_GET['hapus']);
+    
+    $query_delete = "DELETE FROM products WHERE id = $id_hapus";
+    if (mysqli_query($koneksi, $query_delete)) {
+        echo "<script>alert('Produk berhasil dihapus!'); window.location='admin.php';</script>";
+    } else {
+        echo "<script>alert('Gagal menghapus produk!');</script>";
+    }
+}
+
+// HITUNG RINGKASAN DASHBOARD
 $tgl_hari_ini = date('Y-m-d');
 $query_omzet = mysqli_query($koneksi, "SELECT SUM(total_harga) AS omzet FROM transactions WHERE DATE(created_at) = '$tgl_hari_ini'");
 $data_omzet = mysqli_fetch_assoc($query_omzet);
@@ -37,7 +75,7 @@ $query_total_produk = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM prod
 $total_produk = mysqli_fetch_assoc($query_total_produk)['total'];
 
 // Ambil Data Produk & Kategori
-$categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC");
+$categories_query = "SELECT * FROM categories ORDER BY nama_kategori ASC";
 $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.id DESC");
 ?>
 <!DOCTYPE html>
@@ -101,7 +139,10 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
                             <label class="form-label small">Kategori</label>
                             <select name="category_id" class="form-select" required>
                                 <option value="">-- Pilih Kategori --</option>
-                                <?php while ($c = mysqli_fetch_assoc($categories)): ?>
+                                <?php 
+                                $cat_res = mysqli_query($koneksi, $categories_query);
+                                while ($c = mysqli_fetch_assoc($cat_res)): 
+                                ?>
                                     <option value="<?= $c['id'] ?>"><?= $c['nama_kategori'] ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -134,10 +175,10 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
                             <tr>
                                 <th>Kode</th>
                                 <th>Nama Barang</th>
-                                <th>Kategori</th>
                                 <th>Harga Beli</th>
                                 <th>Harga Jual</th>
                                 <th>Stok</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -145,7 +186,6 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
                                 <tr>
                                     <td><code><?= $row['kode_barang'] ?></code></td>
                                     <td><?= $row['nama_barang'] ?></td>
-                                    <td><?= $row['nama_kategori'] ?? '-' ?></td>
                                     <td>Rp <?= number_format($row['harga_beli'], 0, ',', '.') ?></td>
                                     <td>Rp <?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
                                     <td>
@@ -155,7 +195,67 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
                                             <span class="badge bg-success"><?= $row['stok'] ?></span>
                                         <?php endif; ?>
                                     </td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id'] ?>">Edit</button>
+                                        <a href="admin.php?hapus=<?= $row['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus barang ini?')">Hapus</a>
+                                    </td>
                                 </tr>
+
+                                <!-- MODAL EDIT PRODUK -->
+                                <div class="modal fade" id="modalEdit<?= $row['id'] ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="" method="POST">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold">Edit Produk</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Kode Barang / Barcode</label>
+                                                        <input type="text" name="kode_barang" class="form-control" value="<?= $row['kode_barang'] ?>" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Nama Barang</label>
+                                                        <input type="text" name="nama_barang" class="form-control" value="<?= $row['nama_barang'] ?>" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Kategori</label>
+                                                        <select name="category_id" class="form-select" required>
+                                                            <?php 
+                                                            $cat_res_modal = mysqli_query($koneksi, $categories_query);
+                                                            while ($cm = mysqli_fetch_assoc($cat_res_modal)): 
+                                                            ?>
+                                                                <option value="<?= $cm['id'] ?>" <?= $cm['id'] == $row['category_id'] ? 'selected' : '' ?>>
+                                                                    <?= $cm['nama_kategori'] ?>
+                                                                </option>
+                                                            <?php endwhile; ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Harga Beli (HPP)</label>
+                                                        <input type="number" name="harga_beli" class="form-control" value="<?= $row['harga_beli'] ?>" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Harga Jual</label>
+                                                        <input type="number" name="harga_jual" class="form-control" value="<?= $row['harga_jual'] ?>" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Stok</label>
+                                                        <input type="number" name="stok" class="form-control" value="<?= $row['stok'] ?>" required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" name="edit_produk" class="btn btn-primary fw-bold">Simpan Perubahan</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- END MODAL EDIT -->
+
                             <?php endwhile; ?>
                         </tbody>
                     </table>
@@ -165,5 +265,7 @@ $products = mysqli_query($koneksi, "SELECT p.*, c.nama_kategori FROM products p 
     </div>
 </div>
 
+<!-- JS Bootstrap untuk Modal -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
