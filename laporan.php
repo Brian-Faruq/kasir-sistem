@@ -26,21 +26,11 @@ $data_p = mysqli_fetch_assoc($res_penjualan);
 $omzet           = $data_p['total_omzet'] ?? 0;
 $hpp             = $data_p['total_hpp'] ?? 0;
 $total_transaksi = $data_p['total_transaksi'] ?? 0;
-$laporan_kotor   = $omzet - $hpp;
 
-// 2. HITUNG TOTAL PENGELUARAN OPERASIONAL
-$query_expenses = "SELECT SUM(nominal) AS total_pengeluaran 
-                   FROM expenses 
-                   WHERE DATE(created_at) BETWEEN '$tgl_mulai' AND '$tgl_selesai'";
-$res_expenses = mysqli_query($koneksi, $query_expenses);
-$data_e = mysqli_fetch_assoc($res_expenses);
+// 2. HITUNG LABA BERSIH (OMZET - HPP)
+$laba_bersih = $omzet - $hpp;
 
-$pengeluaran = $data_e['total_pengeluaran'] ?? 0;
-
-// 3. HITUNG LABA BERSIH RIIL
-$laba_bersih = $laporan_kotor - $pengeluaran;
-
-// 4. AMBIL RINCIAN TRANSAKSI UNTUK TABEL
+// 3. AMBIL RINCIAN TRANSAKSI UNTUK TABEL
 $query_detail_trans = "SELECT t.*, u.nama AS kasir 
                        FROM transactions t 
                        JOIN users u ON t.user_id = u.id 
@@ -91,7 +81,7 @@ $list_transaksi = mysqli_query($koneksi, $query_detail_trans);
 
     <!-- METRIK KEUANGAN (LABA/RUGI) -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-primary text-white shadow-sm">
                 <div class="card-body">
                     <h6 class="card-title">Total Omzet</h6>
@@ -100,7 +90,7 @@ $list_transaksi = mysqli_query($koneksi, $query_detail_trans);
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-secondary text-white shadow-sm">
                 <div class="card-body">
                     <h6 class="card-title">Total Modal (HPP)</h6>
@@ -109,16 +99,7 @@ $list_transaksi = mysqli_query($koneksi, $query_detail_trans);
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Pengeluaran Operasional</h6>
-                    <h4 class="fw-bold mb-0">Rp <?= number_format($pengeluaran, 0, ',', '.') ?></h4>
-                    <small>Biaya Listrik, Plastik, dll</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card <?= $laba_bersih >= 0 ? 'bg-success' : 'bg-danger' ?> text-white shadow-sm">
                 <div class="card-body">
                     <h6 class="card-title">Laba Bersih</h6>
