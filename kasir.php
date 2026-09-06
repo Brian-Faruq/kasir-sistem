@@ -377,7 +377,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     function onScanSuccess(decodedText) {
         let found = false;
 
-        // Cari opsi di Select2 yang memiliki data-kode sama dengan hasil scan
+        // 1. Cari opsi di Select2 yang cocok dengan hasil scan
         $('#select-produk option').each(function() {
             const kodeBarang = $(this).data('kode');
             if (kodeBarang && kodeBarang.toString().trim() === decodedText.trim()) {
@@ -388,14 +388,21 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         });
 
         if (found) {
-            // Tutup Modal dan matikan kamera
+            // 2. Set QTY otomatis jadi 1
+            $('#input_qty').val(1);
+
+            // 3. Matikan kamera & tutup modal
             const bsModal = bootstrap.Modal.getInstance(modalScanner);
-            bsModal.hide();
-            
-            // Fokuskan ke input QTY
+            if (bsModal) {
+                bsModal.hide();
+            }
+            stopScanner();
+
+            // 4. Otomatis submit form (langsung masuk keranjang)
             setTimeout(() => {
-                $('#input_qty').focus().select();
-            }, 500);
+                $('button[name="tambah_keranjang"]').click();
+            }, 300);
+
         } else {
             alert("Barang dengan kode barcode: " + decodedText + " tidak ditemukan!");
         }
