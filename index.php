@@ -2,7 +2,23 @@
 session_start();
 require_once 'koneksi.php';
 
-// Redirect jika sudah login
+// 1. CEK AUTOLOGIN DARI COOKIE (Ingat Saya)
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['key'])) {
+    $user_id = intval($_COOKIE['user_id']);
+    $key     = $_COOKIE['key'];
+
+    $q_cookie = mysqli_query($koneksi, "SELECT * FROM users WHERE id = $user_id");
+    if ($row = mysqli_fetch_assoc($q_cookie)) {
+        // Verifikasi key cookie berdasarkan username
+        if ($key === md5($row['username'])) {
+            $_SESSION['user_id'] = $row['id'];
+            $_SESSION['nama']    = $row['nama'];
+            $_SESSION['role']    = $row['role'];
+        }
+    }
+}
+
+// 2. JIKA SUDAH LOGIN, REDIRECT SESUAI ROLE
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] === 'owner') {
         header("Location: admin.php");
@@ -14,29 +30,37 @@ if (isset($_SESSION['user_id'])) {
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// 3. PROSES SUBMIT LOGIN
+if (isset($_POST['login'])) {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
-    $password = md5($_POST['password']);
+    $password = $_POST['password'];
 
-    $query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
-    $result = mysqli_query($koneksi, $query);
+    // Enkripsi inputan password dengan MD5
+    $password_md5 = md5($password);
 
-    if (mysqli_num_rows($result) === 1) {
-        $user = mysqli_fetch_assoc($result);
-        
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['nama']    = $user['nama'];
-        $_SESSION['role']    = $user['role'];
+    $query = mysqli_query($koneksi, "SELECT * FROM users WHERE username = '$username' AND password = '$password_md5'");
 
-        // Arahkan halaman sesuai role
-        if ($user['role'] === 'owner') {
+    if (mysqli_num_rows($query) === 1) {
+        $row = mysqli_fetch_assoc($query);
+
+        $_SESSION['user_id'] = $row['id'];
+        $_SESSION['nama']    = $row['nama'];
+        $_SESSION['role']    = $row['role'];
+
+        // FITUR INGAT SAYA (REMEMBER ME)
+        if (isset($_POST['remember'])) {
+            setcookie('user_id', $row['id'], time() + (86400 * 30), "/");
+            setcookie('key', md5($row['username']), time() + (86400 * 30), "/");
+        }
+
+        if ($row['role'] === 'owner') {
             header("Location: admin.php");
         } else {
             header("Location: kasir.php");
         }
         exit;
     } else {
-        $error = "Username atau password salah!";
+        $error = "Username atau Password salah!";
     }
 }
 ?>
@@ -46,47 +70,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - POS UMKM</title>
-    <!-- Bootstrap 5 CDN untuk tampilan cepat dan responsif -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-        .login-card {
-            max-width: 400px;
-            margin: 80px auto;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
-<body>
+<body class="bg-light d-flex align-items-center justify-content-center min-vh-100">
 
-<div class="container">
-    <div class="card login-card p-4">
-        <div class="card-body">
-            <h3 class="text-center fw-bold mb-1">POS UMKM</h3>
-            <p class="text-center text-muted mb-4">Silahkan login untuk mengakses kasir</p>
+<div class="card shadow-sm style-card" style="width: 100%; max-width: 400px;">
+    <div class="card-body p-4">
+        <h3 class="card-title text-center mb-4 fw-bold text-primary">POS UMKM</h3>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-danger py-2 small" role="alert">
+                <?= $error ?>
+            </div>
+        <?php endif; ?>
 
-            <?php if (!empty($error)): ?>
-                <div class="alert alert-danger py-2" role="alert">
-                    <?= $error ?>
-                </div>
-            <?php endif; ?>
+        <form action="" method="POST">
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Masukkan username" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Masukkan password" required>
+            </div>
+            
+            <!-- CHECKBOX INGAT SAYA -->
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="remember" class="form-check-input" id="remember">
+                <label class="form-check-label small" for="remember">Ingat Saya</label>
+            </div>
 
-            <form action="" method="POST">
-                <div class="mb-3">
-                    <label for="username" class="form-label fw-semibold">Username</label>
-                    <input type="text" name="username" id="username" class="form-control" placeholder="Masukkan username" required autofocus>
-                </div>
-                <div class="mb-4">
-                    <label for="password" class="form-label fw-semibold">Password</label>
-                    <input type="password" name="password" id="password" class="form-control" placeholder="Masukkan password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">MASUK</button>
-            </form>
-        </div>
+            <button type="submit" name="login" class="btn btn-primary w-100 fw-bold">LOGIN</button>
+        </form>
     </div>
 </div>
 
