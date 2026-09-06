@@ -256,7 +256,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     </div>
 </div>
 
-<!-- MODAL CAMERA SCANNER -->
+<!-- MODAL CAMERA & FILE SCANNER -->
 <div class="modal fade" id="modalScanner" tabindex="-1" aria-labelledby="modalScannerLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -266,7 +266,14 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             </div>
             <div class="modal-body text-center">
                 <div id="reader" style="width: 100%;"></div>
-                <small class="text-muted mt-2 d-block">Arahkan kamera ke barcode kemasan barang</small>
+                
+                <hr class="my-3">
+                
+                <!-- OPSI UPLOAD GAMBAR BARCODE -->
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-muted">Atau Upload Gambar Barcode (Tanpa Kamera):</label>
+                    <input type="file" id="qr-input-file" accept="image/*" class="form-control form-control-sm">
+                </div>
             </div>
         </div>
     </div>
@@ -393,6 +400,23 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             alert("Barang dengan kode barcode: " + decodedText + " tidak ditemukan!");
         }
     }
+
+    // Tambahan Handler untuk Upload Gambar Barcode via File Laptop
+    document.getElementById('qr-input-file').addEventListener('change', e => {
+        if (e.target.files.length == 0) {
+            return;
+        }
+        const imageFile = e.target.files[0];
+        const html5QrCode = new Html5Qrcode("reader");
+        
+        html5QrCode.scanFile(imageFile, true)
+            .then(decodedText => {
+                onScanSuccess(decodedText);
+            })
+            .catch(err => {
+                alert("Gagal membaca barcode dari gambar ini. Pastikan gambar jelas!");
+            });
+    });
 </script>
 
 </body>
