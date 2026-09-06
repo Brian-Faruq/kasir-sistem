@@ -128,7 +128,11 @@ $list_transaksi = mysqli_query($koneksi, $query_detail_trans);
                     <?php if (mysqli_num_rows($list_transaksi) > 0): ?>
                         <?php while ($row = mysqli_fetch_assoc($list_transaksi)): ?>
                             <tr>
-                                <td><code><?= $row['no_nota'] ?></code></td>
+                                <td>
+                                    <a href="cetak_nota.php?id=<?= $row['id'] ?>" target="_blank" class="text-decoration-none fw-bold" title="Klik untuk lihat / cetak nota">
+                                        <code><?= $row['no_nota'] ?></code>
+                                    </a>
+                                </td>
                                 <td><?= date('d-m-Y H:i', strtotime($row['created_at'])) ?></td>
                                 <td><?= $row['kasir'] ?></td>
                                 <td><span class="badge bg-info text-dark"><?= strtoupper($row['metode_bayar']) ?></span></td>
