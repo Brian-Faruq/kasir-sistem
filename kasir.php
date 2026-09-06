@@ -115,6 +115,26 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     
     <!-- HTML5 QRCode Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        /* Posisikan Modal di Kiri Layar */
+        .modal-scanner-left {
+            margin-left: 20px !important;
+            margin-top: 80px !important;
+            max-width: 420px;
+        }
+
+        /* Bikin Tabel Keranjang Belanja Terangkat di Atas Backdrop Gelap */
+        .modal-open .col-md-8 {
+            position: relative;
+            z-index: 1056 !important; /* Nilai di atas z-index backdrop bootstrap (1050) */
+        }
+
+        /* Pastikan Modal Tetap Paling Atas */
+        #modalScanner {
+            z-index: 1057 !important;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -258,7 +278,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 
 <!-- MODAL CAMERA & FILE SCANNER -->
 <div class="modal fade" id="modalScanner" tabindex="-1" aria-labelledby="modalScannerLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-scanner-left">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold" id="modalScannerLabel">Scan Barcode Produk</h5>
