@@ -23,7 +23,6 @@ if (isset($_POST['tambah_keranjang'])) {
         $prod   = mysqli_fetch_assoc($q_prod);
 
         if ($prod) {
-            // Cek persediaan stok
             if ($qty > $prod['stok']) {
                 echo "<script>alert('Stok tidak mencukupi! Stok tersisa: {$prod['stok']}');</script>";
             } else {
@@ -59,9 +58,9 @@ if (isset($_GET['batal'])) {
 
 // 4. PROSES TRANSAKSI
 if (isset($_POST['proses_transaksi'])) {
-    $bayar = floatval($_POST['bayar']);
-    $user_id = $_SESSION['user_id'];
-    $metode_bayar = 'cash';
+    $bayar        = floatval($_POST['bayar']);
+    $metode_bayar = mysqli_real_escape_string($koneksi, $_POST['metode_bayar']);
+    $user_id      = $_SESSION['user_id'];
 
     $total_harga = 0;
     foreach ($_SESSION['cart'] as $item) {
@@ -142,7 +141,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                             <select name="product_id" id="select-produk" class="form-select" required>
                                 <option value="">-- Cari Produk --</option>
                                 <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
-                                    <!-- DITAMBAHKAN ATRIBUT data-stok DI SINI -->
                                     <option value="<?= $p['id'] ?>" data-stok="<?= $p['stok'] ?>">
                                         <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
                                     </option>
@@ -210,14 +208,23 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 <div class="card-footer bg-white p-3">
                     <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
                         <div class="row align-items-center">
-                            <div class="col-md-5">
+                            <div class="col-md-5 mb-3 mb-md-0">
                                 <h4 class="mb-0 fw-bold text-primary">Total: Rp <?= number_format($grand_total, 0, ',', '.') ?></h4>
                                 <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
                             </div>
                             <div class="col-md-7">
+                                <!-- PILIH METODE PEMBAYARAN -->
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold mb-1">Metode Pembayaran:</label>
+                                    <select name="metode_bayar" id="metode_bayar" class="form-select fw-bold" onchange="toggleMetodeBayar()">
+                                        <option value="cash">CASH (Tunai)</option>
+                                        <option value="qris">QRIS (Nontunai)</option>
+                                    </select>
+                                </div>
+
                                 <!-- QUICK CASH BUTTONS -->
                                 <?php if (!empty($_SESSION['cart'])): ?>
-                                    <div class="btn-group w-100 mb-2" role="group">
+                                    <div id="quick_cash_container" class="btn-group w-100 mb-2" role="group">
                                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(<?= $grand_total ?>)">Uang Pas</button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(10000)">10k</button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(20000)">20k</button>
@@ -252,7 +259,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             allowClear: true
         });
 
-        // DITAMBAHKAN: Otomatis membatasi input Qty sesuai stok produk yang dipilih
         $('#select-produk').on('change', function() {
             const stokTersedia = $(this).find(':selected').data('stok');
             const inputQty = $('#input_qty');
@@ -267,6 +273,24 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             }
         });
     });
+
+    // Toggle Sesuai Metode Bayar
+    function toggleMetodeBayar() {
+        const metode = document.getElementById('metode_bayar').value;
+        const grandTotal = parseFloat(document.getElementById('grand_total').value) || 0;
+        const inputBayar = document.getElementById('input_bayar');
+        const quickCash = document.getElementById('quick_cash_container');
+
+        if (metode === 'qris') {
+            inputBayar.value = grandTotal;
+            inputBayar.readOnly = true;
+            if (quickCash) quickCash.style.display = 'none';
+        } else {
+            inputBayar.value = '';
+            inputBayar.readOnly = false;
+            if (quickCash) quickCash.style.display = 'flex';
+        }
+    }
 
     // Function Quick Cash Nominal
     function setNominal(amount) {
