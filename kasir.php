@@ -112,6 +112,9 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    
+    <!-- HTML5 QRCode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="bg-light">
 
@@ -133,7 +136,12 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         <!-- FORM PILIH BARANG -->
         <div class="col-md-4">
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold">Pilih Barang</div>
+                <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>Pilih Barang</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalScanner">
+                        📷 Scan Barcode
+                    </button>
+                </div>
                 <div class="card-body">
                     <form action="" method="POST">
                         <div class="mb-3">
@@ -141,7 +149,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                             <select name="product_id" id="select-produk" class="form-select" required>
                                 <option value="">-- Cari Produk --</option>
                                 <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
-                                    <option value="<?= $p['id'] ?>" data-stok="<?= $p['stok'] ?>">
+                                    <option value="<?= $p['id'] ?>" data-kode="<?= $p['kode_barang'] ?>" data-stok="<?= $p['stok'] ?>">
                                         <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
                                     </option>
                                 <?php endwhile; ?>
@@ -248,7 +256,24 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     </div>
 </div>
 
+<!-- MODAL CAMERA SCANNER -->
+<div class="modal fade" id="modalScanner" tabindex="-1" aria-labelledby="modalScannerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalScannerLabel">Scan Barcode Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="reader" style="width: 100%;"></div>
+                <small class="text-muted mt-2 d-block">Arahkan kamera ke barcode kemasan barang</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
@@ -307,6 +332,66 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             return false;
         }
         return true;
+    }
+
+    // ==========================================
+    // SCRIPT INTEGRASI CAMERA BARCODE SCANNER
+    // ==========================================
+    let html5QrcodeScanner = null;
+
+    const modalScanner = document.getElementById('modalScanner');
+    
+    modalScanner.addEventListener('shown.bs.modal', function () {
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        
+        html5QrcodeScanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess
+        ).catch(err => {
+            alert("Kamera tidak dapat diakses: " + err);
+        });
+    });
+
+    modalScanner.addEventListener('hidden.bs.modal', function () {
+        stopScanner();
+    });
+
+    function stopScanner() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+            }).catch(err => console.log(err));
+        }
+    }
+
+    function onScanSuccess(decodedText) {
+        let found = false;
+
+        // Cari opsi di Select2 yang memiliki data-kode sama dengan hasil scan
+        $('#select-produk option').each(function() {
+            const kodeBarang = $(this).data('kode');
+            if (kodeBarang && kodeBarang.toString().trim() === decodedText.trim()) {
+                $('#select-produk').val($(this).val()).trigger('change');
+                found = true;
+                return false; // Break loop
+            }
+        });
+
+        if (found) {
+            // Tutup Modal dan matikan kamera
+            const bsModal = bootstrap.Modal.getInstance(modalScanner);
+            bsModal.hide();
+            
+            // Fokuskan ke input QTY
+            setTimeout(() => {
+                $('#input_qty').focus().select();
+            }, 500);
+        } else {
+            alert("Barang dengan kode barcode: " + decodedText + " tidak ditemukan!");
+        }
     }
 </script>
 
