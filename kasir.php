@@ -100,6 +100,10 @@ if (isset($_POST['proses_transaksi'])) {
     }
 }
 
+// AMBIL RINGKASAN PRODUK READY
+$q_total_prod = mysqli_query($koneksi, "SELECT COUNT(id) as total FROM products WHERE stok > 0");
+$total_prod   = mysqli_fetch_assoc($q_total_prod)['total'] ?? 0;
+
 $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 ORDER BY nama_barang ASC");
 ?>
 <!DOCTYPE html>
@@ -107,7 +111,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kasir - POS UMKM</title>
+    <title>Kasir - POS SEKOLAH IMPIAN</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -152,30 +156,49 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 <!-- OVERLAY BACKDROP DARK (z-index 20) -->
 <div id="scannerOverlay" class="fixed inset-0 bg-black/60 z-20 hidden transition-opacity"></div>
 
-<!-- NAVBAR (z-index 10 - akan tertutup overlay saat modal dibuka) -->
-<nav class="bg-gradient-to-r from-impian-orange to-impian-amber shadow-lg mb-4 relative z-10">
+<!-- NAVBAR -->
+<nav class="bg-gradient-to-r from-impian-orange via-impian-amber to-amber-600 shadow-md mb-6 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <span class="text-white font-extrabold text-xl tracking-wider">POS SEKOLAH IMPIAN</span>
+            <div class="bg-white/20 p-2 rounded-lg backdrop-blur-md">
+                <span class="text-xl">🛒</span>
+            </div>
+            <div>
+                <span class="text-white font-black text-lg tracking-wide block leading-none">POS SEKOLAH IMPIAN</span>
+                <span class="text-white/80 text-[10px] tracking-wider uppercase font-semibold">System Kasir Modern</span>
+            </div>
         </div>
-        <div class="flex items-center space-x-4 text-white text-sm">
-            <span>Halo, <strong class="font-bold"><?= $_SESSION['nama'] ?></strong> (<?= ucfirst($_SESSION['role']) ?>)</span>
+        <div class="flex items-center space-x-3 text-white text-xs">
+            <div class="hidden sm:block text-right mr-2">
+                <span class="block text-white/70 text-[10px]">Petugas Kasir</span>
+                <strong class="font-bold text-sm"><?= $_SESSION['nama'] ?></strong> (<?= ucfirst($_SESSION['role']) ?>)
+            </div>
             <?php if ($_SESSION['role'] === 'owner'): ?>
-                <a href="admin.php" class="border border-white/40 hover:bg-white/10 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">Dashboard Owner</a>
+                <a href="admin.php" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1">
+                    📊 <span class="hidden sm:inline">Dashboard</span> Owner
+                </a>
             <?php endif; ?>
-            <a href="logout.php" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow">Logout</a>
+            <a href="logout.php" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-semibold transition shadow flex items-center gap-1">
+                🚪 Logout
+            </a>
         </div>
     </div>
 </nav>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 relative">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative">
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- KOLOM KIRI: KERANJANG BELANJA / TABEL (z-index 30 - TETAP TERANG DI ATAS OVERLAY) -->
-        <div class="lg:col-span-7 relative z-30">
+        <!-- KOLOM KIRI: KERANJANG BELANJA (z-index 30) -->
+        <div class="lg:col-span-7 space-y-5 relative z-30">
+            
+            <!-- CARD KERANJANG BELANJA -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
                 <div class="bg-white border-b border-slate-200 px-5 py-3.5 flex justify-between items-center">
-                    <span class="font-bold text-impian-navy text-lg">Keranjang Belanja</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🛍️</span>
+                        <span class="font-bold text-impian-navy text-base">Keranjang Belanja</span>
+                    </div>
                     <?php if (!empty($_SESSION['cart'])): ?>
                         <a href="kasir.php?batal=1" class="text-xs text-red-600 hover:text-red-800 font-bold border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition" onclick="return confirm('Kosongkan keranjang belanja?')">Kosongkan Keranjang</a>
                     <?php endif; ?>
@@ -185,7 +208,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
                                 <th class="py-3 px-4">Produk</th>
                                 <th class="py-3 px-4">Harga</th>
                                 <th class="py-3 px-4">Qty</th>
@@ -204,10 +227,10 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                                 <tr class="hover:bg-slate-50">
                                     <td class="py-3 px-4 font-semibold text-slate-800"><?= $item['nama_barang'] ?></td>
                                     <td class="py-3 px-4 text-slate-600">Rp <?= number_format($item['harga_jual'], 0, ',', '.') ?></td>
-                                    <td class="py-3 px-4 text-slate-600"><?= $item['qty'] ?></td>
-                                    <td class="py-3 px-4 font-bold text-slate-800">Rp <?= number_format($subtotal, 0, ',', '.') ?></td>
+                                    <td class="py-3 px-4 text-slate-600 font-bold"><?= $item['qty'] ?></td>
+                                    <td class="py-3 px-4 font-bold text-impian-orange">Rp <?= number_format($subtotal, 0, ',', '.') ?></td>
                                     <td class="py-3 px-4 text-center">
-                                        <a href="kasir.php?hapus=<?= $id_p ?>" class="bg-red-100 text-red-600 hover:bg-red-200 text-xs px-2.5 py-1 rounded-md font-bold transition">Hapus</a>
+                                        <a href="kasir.php?hapus=<?= $id_p ?>" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-xs px-2.5 py-1 rounded-md font-bold transition">Hapus</a>
                                     </td>
                                 </tr>
                             <?php 
@@ -215,34 +238,49 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                             else: 
                             ?>
                                 <tr>
-                                    <td colspan="5" class="text-center text-slate-400 py-8">Keranjang belanja kosong</td>
+                                    <td colspan="5" class="text-center text-slate-400 py-16">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <span class="text-5xl mb-3">🛒</span>
+                                            <p class="font-semibold text-slate-500 text-sm">Keranjang belanja masih kosong</p>
+                                            <p class="text-xs text-slate-400 mt-1">Pilih atau scan barang di sebelah kanan untuk memulai</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </div>
 
-        <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN (z-index 10 - AKAN GELAP TERKAPUT OVERLAY) -->
-        <div class="lg:col-span-5 space-y-4 relative z-10">
+        <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN (z-index 10) -->
+        <div class="lg:col-span-5 space-y-5 relative z-10">
             
             <!-- CARD 1: PILIH BARANG -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
-                <div class="bg-impian-navy px-5 py-3 flex justify-between items-center text-white">
-                    <h2 class="font-bold text-base">Pilih Barang</h2>
-                    <button type="button" onclick="openScanner()" class="bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition shadow">
+                <div class="bg-impian-navy px-5 py-3.5 flex justify-between items-center text-white">
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-bold text-sm tracking-wide">Pilih Produk</h2>
+                        <span class="bg-white/20 text-white/90 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10">
+                            <?= $total_prod ?> Ready
+                        </span>
+                    </div>
+                    <button type="button" onclick="openScanner()" class="bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition shadow">
                         📷 Scan Barcode
                     </button>
                 </div>
                 <div class="p-4">
-                    <form action="" method="POST">
+                    <form action="" method="POST" id="form-tambah-barang">
                         <div class="grid grid-cols-12 gap-3 mb-3">
                             <div class="col-span-8">
-                                <label class="block text-xs font-bold text-slate-600 mb-1">Nama / Kode Barang</label>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Cari Produk / Barcode</label>
                                 <select name="product_id" id="select-produk" class="w-full" required>
                                     <option value="">-- Cari Produk --</option>
-                                    <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
+                                    <?php 
+                                    mysqli_data_seek($products_list, 0);
+                                    while ($p = mysqli_fetch_assoc($products_list)): 
+                                    ?>
                                         <option value="<?= $p['id'] ?>" data-kode="<?= $p['kode_barang'] ?>" data-stok="<?= $p['stok'] ?>">
                                             <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
                                         </option>
@@ -254,54 +292,60 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                                 <input type="number" name="qty" id="input_qty" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="1" min="1" required>
                             </div>
                         </div>
-                        <button type="submit" name="tambah_keranjang" id="btn_tambah_keranjang" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition shadow">
+                        <button type="submit" name="tambah_keranjang" id="btn_tambah_keranjang" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow text-xs tracking-wide uppercase">
                             + Tambah Ke Keranjang
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- CARD 2: PEMBAYARAN -->
+            <!-- CARD 2: PEMBAYARAN (LAYOUT PRESISI GAMBAR 2) -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-4">
                 <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
+                    
+                    <div class="grid grid-cols-12 gap-4">
                         
-                        <!-- SISI KIRI PEMBAYARAN -->
-                        <div class="space-y-3">
-                            <div class="bg-slate-50 py-3 px-3 rounded-lg border border-slate-100 text-center">
-                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Belanja</span>
-                                <h3 class="text-2xl font-black text-impian-orange">Rp <?= number_format($grand_total, 0, ',', '.') ?></h3>
-                                <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
+                        <!-- SISI KIRI: TOTAL BELANJA & METODE PEMBAYARAN -->
+                        <div class="col-span-5 flex flex-col justify-between">
+                            <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 text-left">
+                                <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">TOTAL BELANJA</span>
+                                <h3 class="text-2xl font-black text-impian-orange leading-tight">
+                                    Rp <?= number_format($grand_total, 0, ',', '.') ?>
+                                </h3>
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-1">Metode Pembayaran</label>
-                                <select name="metode_bayar" id="metode_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" onchange="toggleMetodeBayar()">
-                                    <option value="cash">CASH (Tunai)</option>
-                                    <option value="qris">QRIS (Nontunai)</option>
+                            <div class="mt-3">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Metode Pembayaran</label>
+                                <select name="metode_bayar" id="metode_bayar" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-impian-orange bg-white" onchange="toggleMetodeBayar()">
+                                    <option value="cash">💵 CASH (Tunai)</option>
+                                    <option value="qris">📱 QRIS (Nontunai)</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- SISI KANAN PEMBAYARAN -->
-                        <div class="space-y-3">
-                            <?php if (!empty($_SESSION['cart'])): ?>
-                                <div id="quick_cash_container" class="grid grid-cols-5 gap-1">
-                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
-                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(10000)">10k</button>
-                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(20000)">20k</button>
-                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(50000)">50k</button>
-                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(100000)">100k</button>
-                                </div>
-                            <?php endif; ?>
-
-                            <div>
-                                <input type="number" name="bayar" id="input_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nominal Uang Bayar" required>
+                        <!-- SISI KANAN: NOMINAL CEPAT, INPUT UANG & BUTTON TRANSAKSI -->
+                        <div class="col-span-7 flex flex-col justify-between space-y-2.5">
+                            
+                            <!-- TOMBOL NOMINAL CEPAT -->
+                            <div id="quick_cash_container" class="grid grid-cols-5 gap-1">
+                                <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
+                                <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(10000)">10k</button>
+                                <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(20000)">20k</button>
+                                <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(50000)">50k</button>
+                                <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(100000)">100k</button>
                             </div>
 
-                            <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-bold py-2.5 rounded-lg shadow transition text-xs tracking-wide uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
+                            <!-- INPUT NOMINAL UANG BAYAR -->
+                            <div>
+                                <input type="number" name="bayar" id="input_bayar" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-base font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nominal Uang Bayar" required>
+                            </div>
+
+                            <!-- BUTTON PROSES TRANSAKSI -->
+                            <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-black py-2.5 rounded-xl shadow transition text-xs tracking-wider uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
                                 PROSES TRANSAKSI
                             </button>
+
                         </div>
 
                     </div>
@@ -313,7 +357,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     </div>
 </div>
 
-<!-- MODAL TAILWIND CAMERA SCANNER (z-index 50 - DI PALING ATAS) -->
+<!-- MODAL TAILWIND CAMERA SCANNER (z-index 50) -->
 <div id="modalScanner" class="fixed inset-0 z-50 hidden flex items-start justify-end p-4 sm:p-6 pt-20 pointer-events-none">
     <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 pointer-events-auto">
         <div class="bg-impian-navy px-4 py-3 flex justify-between items-center text-white">
@@ -366,11 +410,11 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         if (metode === 'qris') {
             inputBayar.value = grandTotal;
             inputBayar.readOnly = true;
-            if (quickCash) quickCash.style.display = 'none';
+            if (quickCash) quickCash.style.visibility = 'hidden';
         } else {
             inputBayar.value = '';
             inputBayar.readOnly = false;
-            if (quickCash) quickCash.style.display = 'grid';
+            if (quickCash) quickCash.style.visibility = 'visible';
         }
     }
 
