@@ -259,18 +259,20 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             
             <!-- CARD 1: PILIH BARANG -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+                <!-- HEADER: Title di kiri, Badge Ready di Ujung Kanan (Flex End) -->
                 <div class="bg-impian-navy px-5 py-3.5 flex justify-between items-center text-white">
-                    <div class="flex items-center gap-2">
-                        <h2 class="font-bold text-sm tracking-wide">Pilih Produk</h2>
-                        <span class="bg-white/20 text-white/90 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10">
-                            <?= $total_prod ?> Ready
-                        </span>
-                    </div>
-                    <button type="button" onclick="openScanner()" class="bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition shadow">
-                        📷 Scan Barcode
-                    </button>
+                    <h2 class="font-bold text-sm tracking-wide">Pilih Produk</h2>
+                    <span class="bg-white/20 text-white/90 text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/10">
+                        <?= $total_prod ?> Ready
+                    </span>
                 </div>
+                
                 <div class="p-4">
+                    <!-- TOMBOL SCAN BARCODE (Pindah ke Atas Input) -->
+                    <button type="button" onclick="openScanner()" class="w-full mb-3 bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition shadow">
+                        📷 Scan Barcode Lewat Device
+                    </button>
+
                     <form action="" method="POST" id="form-tambah-barang">
                         <div class="grid grid-cols-12 gap-3 mb-3">
                             <div class="col-span-8">
