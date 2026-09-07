@@ -143,7 +143,7 @@ $sql_products = "SELECT p.*, c.nama_kategori FROM products p LEFT JOIN categorie
 if ($filter_stok === 'menipis') {
     $sql_products .= " WHERE p.stok <= 3";
 }
-$sql_products .= " ORDER BY p.id DESC";
+$sql_products .= " ORDER BY p.stok ASC";
 
 $categories_query = "SELECT * FROM categories ORDER BY nama_kategori ASC";
 $products = mysqli_query($koneksi, $sql_products);
@@ -209,21 +209,6 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 
     <!-- MAIN CONTAINER -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-
-        <!-- ALERT STOK MENIPIS -->
-        <?php if ($stok_menipis_count > 0): ?>
-            <div class="mb-6 bg-amber-50 border-l-4 border-impian-amber p-4 rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div class="flex items-center gap-3 text-amber-800 text-xs sm:text-sm">
-                    <span class="text-xl">⚠️</span>
-                    <div>
-                        <strong class="font-bold">Perhatian!</strong> Terdapat <strong class="underline"><?= $stok_menipis_count ?> produk</strong> yang stoknya menipis (&le; 3 item). Segera restok!
-                    </div>
-                </div>
-                <a href="admin.php?filter=menipis" class="bg-impian-amber hover:bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow text-center">
-                    Lihat Barang Menipis &rarr;
-                </a>
-            </div>
-        <?php endif; ?>
 
         <!-- METRIK DASHBOARD -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
