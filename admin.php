@@ -358,21 +358,19 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                 
                 <!-- 1. TABEL INVENTARIS PRODUK -->
                 <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <span>📦</span> Daftar Stok Produk 
-                            <?= $filter_stok === 'menipis' ? '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">(Filter: Menipis)</span>' : '' ?>
+                            <span>📦</span> Daftar Stok Produk
                         </h3>
-                        <div class="flex gap-1.5 text-xs">
-                            <a href="admin.php" class="px-3 py-1 rounded-lg font-semibold transition <?= $filter_stok === 'all' ? 'bg-slate-800 text-white shadow' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>">Semua</a>
-                            <a href="admin.php?filter=menipis" class="px-3 py-1 rounded-lg font-semibold transition <?= $filter_stok === 'menipis' ? 'bg-red-600 text-white shadow' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' ?>">
-                                Menipis (<?= $stok_menipis_count ?>)
-                            </a>
+                        <!-- SEARCH BAR (Menggantikan Tombol Filter) -->
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs">🔍</span>
+                            <input type="text" id="searchProduct" onkeyup="filterProducts()" placeholder="Cari kode / nama barang..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition shadow-sm">
                         </div>
                     </div>
                     
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                        <table class="w-full text-left text-xs text-slate-600" id="tableProduct">
                             <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
                                 <tr>
                                     <th class="px-4 py-3">Kode</th>
@@ -386,9 +384,9 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                             <tbody class="divide-y divide-slate-100">
                                 <?php if (mysqli_num_rows($products) > 0): ?>
                                     <?php while ($row = mysqli_fetch_assoc($products)): ?>
-                                        <tr class="hover:bg-slate-50 transition">
-                                            <td class="px-4 py-3 font-mono font-medium text-slate-500"><?= $row['kode_barang'] ?></td>
-                                            <td class="px-4 py-3 font-semibold text-slate-800"><?= $row['nama_barang'] ?></td>
+                                        <tr class="product-row hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 font-mono font-medium text-slate-500 product-code"><?= $row['kode_barang'] ?></td>
+                                            <td class="px-4 py-3 font-semibold text-slate-800 product-name"><?= $row['nama_barang'] ?></td>
                                             <td class="px-4 py-3">Rp <?= number_format($row['harga_beli'], 0, ',', '.') ?></td>
                                             <td class="px-4 py-3 font-medium text-slate-800">Rp <?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
                                             <td class="px-4 py-3">
@@ -460,7 +458,7 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                                     <?php endwhile; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="6" class="text-center text-slate-400 py-6">Tidak ada produk yang memenuhi kriteria filter.</td>
+                                        <td colspan="6" class="text-center text-slate-400 py-6">Belum ada data produk.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -581,6 +579,22 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }
+        }
+
+        function filterProducts() {
+            const input = document.getElementById('searchProduct').value.toLowerCase();
+            const rows = document.querySelectorAll('.product-row');
+
+            rows.forEach(row => {
+                const code = row.querySelector('.product-code').textContent.toLowerCase();
+                const name = row.querySelector('.product-name').textContent.toLowerCase();
+
+                if (code.includes(input) || name.includes(input)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
     </script>
 
