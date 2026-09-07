@@ -149,10 +149,10 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 </head>
 <body class="bg-slate-100 font-sans min-h-screen relative">
 
-<!-- OVERLAY BACKDROP DARK -->
-<div id="scannerOverlay" class="fixed inset-0 bg-black/60 z-30 hidden transition-opacity"></div>
+<!-- OVERLAY BACKDROP DARK (z-index 20) -->
+<div id="scannerOverlay" class="fixed inset-0 bg-black/60 z-20 hidden transition-opacity"></div>
 
-<!-- NAVBAR -->
+<!-- NAVBAR (z-index 10 - akan tertutup overlay saat modal dibuka) -->
 <nav class="bg-gradient-to-r from-impian-orange to-impian-amber shadow-lg mb-4 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-3">
@@ -171,8 +171,8 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 relative">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- KOLOM KIRI: KERANJANG BELANJA -->
-        <div class="lg:col-span-7 relative z-10">
+        <!-- KOLOM KIRI: KERANJANG BELANJA / TABEL (z-index 30 - TETAP TERANG DI ATAS OVERLAY) -->
+        <div class="lg:col-span-7 relative z-30">
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
                 <div class="bg-white border-b border-slate-200 px-5 py-3.5 flex justify-between items-center">
                     <span class="font-bold text-impian-navy text-lg">Keranjang Belanja</span>
@@ -224,7 +224,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             </div>
         </div>
 
-        <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN -->
+        <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN (z-index 10 - AKAN GELAP TERKAPUT OVERLAY) -->
         <div class="lg:col-span-5 space-y-4 relative z-10">
             
             <!-- CARD 1: PILIH BARANG -->
@@ -261,21 +261,19 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 </div>
             </div>
 
-            <!-- CARD 2: PEMBAYARAN (DIBUAT GRID 2 KOLOM SUPAYA LEBIH PENDEK & MUAT 1 LAYAR) -->
+            <!-- CARD 2: PEMBAYARAN -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-4">
                 <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                         
-                        <!-- SISU KIRI PEMBAYARAN -->
+                        <!-- SISI KIRI PEMBAYARAN -->
                         <div class="space-y-3">
-                            <!-- TOTAL BELANJA -->
                             <div class="bg-slate-50 py-3 px-3 rounded-lg border border-slate-100 text-center">
                                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Belanja</span>
                                 <h3 class="text-2xl font-black text-impian-orange">Rp <?= number_format($grand_total, 0, ',', '.') ?></h3>
                                 <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
                             </div>
 
-                            <!-- METODE PEMBAYARAN -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Metode Pembayaran</label>
                                 <select name="metode_bayar" id="metode_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" onchange="toggleMetodeBayar()">
@@ -287,7 +285,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 
                         <!-- SISI KANAN PEMBAYARAN -->
                         <div class="space-y-3">
-                            <!-- QUICK CASH -->
                             <?php if (!empty($_SESSION['cart'])): ?>
                                 <div id="quick_cash_container" class="grid grid-cols-5 gap-1">
                                     <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
@@ -298,12 +295,10 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                                 </div>
                             <?php endif; ?>
 
-                            <!-- NOMINAL INPUT -->
                             <div>
                                 <input type="number" name="bayar" id="input_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nominal Uang Bayar" required>
                             </div>
 
-                            <!-- TOMBOL TRANSAKSI -->
                             <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-bold py-2.5 rounded-lg shadow transition text-xs tracking-wide uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
                                 PROSES TRANSAKSI
                             </button>
@@ -318,7 +313,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     </div>
 </div>
 
-<!-- MODAL TAILWIND CAMERA SCANNER -->
+<!-- MODAL TAILWIND CAMERA SCANNER (z-index 50 - DI PALING ATAS) -->
 <div id="modalScanner" class="fixed inset-0 z-50 hidden flex items-start justify-end p-4 sm:p-6 pt-20 pointer-events-none">
     <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 pointer-events-auto">
         <div class="bg-impian-navy px-4 py-3 flex justify-between items-center text-white">
