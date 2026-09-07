@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Inisialisasi Keranjang Belanja jika belum ada
+// Inisialisasi Keranjang Belanja
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
@@ -109,64 +109,137 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir - POS UMKM</title>
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        impian: {
+                            orange: '#E85D04',
+                            amber: '#F48C06',
+                            navy: '#1A365D',
+                            teal: '#0D9488',
+                            darkteal: '#0F766E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     
-    <!-- HTML5 QRCode Scanner Library -->
+    <!-- Select2 & HTML5 QRCode -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        /* Posisikan Modal di Kiri Layar */
-        .modal-scanner-left {
-            margin-left: 20px !important;
-            margin-top: 80px !important;
-            max-width: 420px;
+        .select2-container--default .select2-selection--single {
+            height: 42px !important;
+            border-color: #D1D5DB !important;
+            border-radius: 0.5rem !important;
+            padding-top: 6px !important;
         }
-
-        /* Bikin Tabel Keranjang Belanja Terangkat di Atas Backdrop Gelap */
-        .modal-open .col-md-8 {
-            position: relative;
-            z-index: 1056 !important; /* Nilai di atas z-index backdrop bootstrap (1050) */
-        }
-
-        /* Pastikan Modal Tetap Paling Atas */
-        #modalScanner {
-            z-index: 1057 !important;
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
         }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-slate-100 font-sans min-h-screen relative">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="#">POS UMKM</a>
-        <div class="d-flex text-white align-items-center">
-            <span class="me-3">Halo, <strong><?= $_SESSION['nama'] ?></strong> (<?= ucfirst($_SESSION['role']) ?>)</span>
+<!-- OVERLAY BACKDROP DARK -->
+<div id="scannerOverlay" class="fixed inset-0 bg-black/60 z-30 hidden transition-opacity"></div>
+
+<!-- NAVBAR -->
+<nav class="bg-gradient-to-r from-impian-orange to-impian-amber shadow-lg mb-6 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="text-white font-extrabold text-xl tracking-wider">POS SEKOLAH IMPIAN</span>
+        </div>
+        <div class="flex items-center space-x-4 text-white text-sm">
+            <span>Halo, <strong class="font-bold"><?= $_SESSION['nama'] ?></strong> (<?= ucfirst($_SESSION['role']) ?>)</span>
             <?php if ($_SESSION['role'] === 'owner'): ?>
-                <a href="admin.php" class="btn btn-outline-light btn-sm me-2">Dashboard Owner</a>
+                <a href="admin.php" class="border border-white/40 hover:bg-white/10 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">Dashboard Owner</a>
             <?php endif; ?>
-            <a href="logout.php" class="btn btn-outline-danger btn-sm text-white">Logout</a>
+            <a href="logout.php" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow">Logout</a>
         </div>
     </div>
 </nav>
 
-<div class="container-fluid px-4">
-    <div class="row">
-        <!-- FORM PILIH BARANG -->
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                    <span>Pilih Barang</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalScanner">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 relative">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- KOLOM KIRI: KERANJANG BELANJA (MURNI TABEL) -->
+        <div class="lg:col-span-8 relative z-10">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+                <div class="bg-white border-b border-slate-200 px-5 py-4 flex justify-between items-center">
+                    <span class="font-bold text-impian-navy text-lg">Keranjang Belanja</span>
+                    <?php if (!empty($_SESSION['cart'])): ?>
+                        <a href="kasir.php?batal=1" class="text-xs text-red-600 hover:text-red-800 font-bold border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition" onclick="return confirm('Kosongkan keranjang belanja?')">Kosongkan Keranjang</a>
+                    <?php endif; ?>
+                </div>
+
+                <!-- TABEL KERANJANG -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
+                                <th class="py-3.5 px-4">Produk</th>
+                                <th class="py-3.5 px-4">Harga</th>
+                                <th class="py-3.5 px-4">Qty</th>
+                                <th class="py-3.5 px-4">Subtotal</th>
+                                <th class="py-3.5 px-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <?php 
+                            $grand_total = 0;
+                            if (!empty($_SESSION['cart'])): 
+                                foreach ($_SESSION['cart'] as $id_p => $item):
+                                    $subtotal = $item['harga_jual'] * $item['qty'];
+                                    $grand_total += $subtotal;
+                            ?>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-4 font-semibold text-slate-800"><?= $item['nama_barang'] ?></td>
+                                    <td class="py-3 px-4 text-slate-600">Rp <?= number_format($item['harga_jual'], 0, ',', '.') ?></td>
+                                    <td class="py-3 px-4 text-slate-600"><?= $item['qty'] ?></td>
+                                    <td class="py-3 px-4 font-bold text-slate-800">Rp <?= number_format($subtotal, 0, ',', '.') ?></td>
+                                    <td class="py-3 px-4 text-center">
+                                        <a href="kasir.php?hapus=<?= $id_p ?>" class="bg-red-100 text-red-600 hover:bg-red-200 text-xs px-2.5 py-1 rounded-md font-bold transition">Hapus</a>
+                                    </td>
+                                </tr>
+                            <?php 
+                                endforeach; 
+                            else: 
+                            ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-slate-400 py-8">Keranjang belanja kosong</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN -->
+        <div class="lg:col-span-4 space-y-6 relative z-10">
+            
+            <!-- CARD 1: PILIH BARANG -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+                <div class="bg-impian-navy px-5 py-4 flex justify-between items-center text-white">
+                    <h2 class="font-bold text-base">Pilih Barang</h2>
+                    <button type="button" onclick="openScanner()" class="bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition shadow">
                         📷 Scan Barcode
                     </button>
                 </div>
-                <div class="card-body">
+                <div class="p-5">
                     <form action="" method="POST">
-                        <div class="mb-3">
-                            <label class="form-label small">Nama / Kode Barang</label>
-                            <select name="product_id" id="select-produk" class="form-select" required>
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Nama / Kode Barang</label>
+                            <select name="product_id" id="select-produk" class="w-full" required>
                                 <option value="">-- Cari Produk --</option>
                                 <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
                                     <option value="<?= $p['id'] ?>" data-kode="<?= $p['kode_barang'] ?>" data-stok="<?= $p['stok'] ?>">
@@ -175,138 +248,88 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                                 <?php endwhile; ?>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small">Jumlah (Qty)</label>
-                            <input type="number" name="qty" id="input_qty" class="form-control" value="1" min="1" required>
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Jumlah (Qty)</label>
+                            <input type="number" name="qty" id="input_qty" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="1" min="1" required>
                         </div>
-                        <button type="submit" name="tambah_keranjang" class="btn btn-primary w-100 fw-bold">+</button>
+                        <button type="submit" name="tambah_keranjang" id="btn_tambah_keranjang" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow">
+                            + Tambah Ke Keranjang
+                        </button>
                     </form>
                 </div>
             </div>
+
+            <!-- CARD 2: PEMBAYARAN -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-5">
+                <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
+                    <div class="space-y-4">
+                        <!-- TOTAL BELANJA -->
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Belanja</span>
+                            <h3 class="text-3xl font-black text-impian-orange">Rp <?= number_format($grand_total, 0, ',', '.') ?></h3>
+                            <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
+                        </div>
+
+                        <!-- METODE PEMBAYARAN -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Metode Pembayaran</label>
+                            <select name="metode_bayar" id="metode_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" onchange="toggleMetodeBayar()">
+                                <option value="cash">CASH (Tunai)</option>
+                                <option value="qris">QRIS (Nontunai)</option>
+                            </select>
+                        </div>
+
+                        <!-- QUICK CASH -->
+                        <?php if (!empty($_SESSION['cart'])): ?>
+                            <div id="quick_cash_container" class="grid grid-cols-5 gap-1.5">
+                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
+                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(10000)">10k</button>
+                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(20000)">20k</button>
+                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(50000)">50k</button>
+                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(100000)">100k</button>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- NOMINAL INPUT -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Nominal Uang Bayar</label>
+                            <input type="number" name="bayar" id="input_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Masukkan Nominal" required>
+                        </div>
+
+                        <!-- TOMBOL TRANSAKSI -->
+                        <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-bold py-3 rounded-lg shadow-md transition text-sm tracking-wide uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
+                            PROSES TRANSAKSI
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
 
-        <!-- KERANJANG BELANJA & PEMBAYARAN -->
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <span class="fw-bold">Keranjang Belanja</span>
-                    <?php if (!empty($_SESSION['cart'])): ?>
-                        <a href="kasir.php?batal=1" class="btn btn-outline-danger btn-sm fw-bold" onclick="return confirm('Kosongkan keranjang belanja?')">Kosongkan Keranjang</a>
-                    <?php endif; ?>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Produk</th>
-                                <th>Harga</th>
-                                <th>Qty</th>
-                                <th>Subtotal</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $grand_total = 0;
-                            if (!empty($_SESSION['cart'])): 
-                                foreach ($_SESSION['cart'] as $id_p => $item):
-                                    $subtotal = $item['harga_jual'] * $item['qty'];
-                                    $grand_total += $subtotal;
-                            ?>
-                                <tr>
-                                    <td><?= $item['nama_barang'] ?></td>
-                                    <td>Rp <?= number_format($item['harga_jual'], 0, ',', '.') ?></td>
-                                    <td><?= $item['qty'] ?></td>
-                                    <td>Rp <?= number_format($subtotal, 0, ',', '.') ?></td>
-                                    <td>
-                                        <a href="kasir.php?hapus=<?= $id_p ?>" class="btn btn-danger btn-sm">Hapus</a>
-                                    </td>
-                                </tr>
-                            <?php 
-                                endforeach; 
-                            else: 
-                            ?>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Keranjang kosong</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="card-footer bg-white p-3">
-                    <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
-                        <div class="row align-items-center">
-                            <div class="col-md-5 mb-3 mb-md-0">
-                                <h4 class="mb-0 fw-bold text-primary">Total: Rp <?= number_format($grand_total, 0, ',', '.') ?></h4>
-                                <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
-                            </div>
-                            <div class="col-md-7">
-                                <!-- PILIH METODE PEMBAYARAN -->
-                                <div class="mb-2">
-                                    <label class="form-label small fw-bold mb-1">Metode Pembayaran:</label>
-                                    <select name="metode_bayar" id="metode_bayar" class="form-select fw-bold" onchange="toggleMetodeBayar()">
-                                        <option value="cash">CASH (Tunai)</option>
-                                        <option value="qris">QRIS (Nontunai)</option>
-                                    </select>
-                                </div>
+    </div>
+</div>
 
-                                <!-- QUICK CASH BUTTONS -->
-                                <?php if (!empty($_SESSION['cart'])): ?>
-                                    <div id="quick_cash_container" class="btn-group w-100 mb-2" role="group">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(<?= $grand_total ?>)">Uang Pas</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(10000)">10k</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(20000)">20k</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(50000)">50k</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setNominal(100000)">100k</button>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="input-group mb-2">
-                                    <input type="number" name="bayar" id="input_bayar" class="form-control form-control-lg" placeholder="Nominal Uang Bayar" required>
-                                </div>
-                                <button type="submit" name="proses_transaksi" class="btn btn-success btn-lg w-100 fw-bold" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
-                                    PROSES TRANSAKSI
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+<!-- MODAL TAILWIND CAMERA SCANNER -->
+<div id="modalScanner" class="fixed inset-0 z-50 hidden flex items-start justify-end p-4 sm:p-6 pt-20 pointer-events-none">
+    <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 pointer-events-auto">
+        <div class="bg-impian-navy px-4 py-3 flex justify-between items-center text-white">
+            <h3 class="font-bold text-sm">Scan Barcode Produk</h3>
+            <button type="button" onclick="closeScanner()" class="text-white/80 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+        <div class="p-4 text-center">
+            <div id="reader" class="w-full rounded-lg overflow-hidden border"></div>
+            <hr class="my-4">
+            <div class="text-left">
+                <label class="block text-xs font-bold text-slate-500 mb-1">Upload Gambar Barcode:</label>
+                <input type="file" id="qr-input-file" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
             </div>
         </div>
     </div>
 </div>
-
-<!-- MODAL CAMERA & FILE SCANNER -->
-<div class="modal fade" id="modalScanner" tabindex="-1" aria-labelledby="modalScannerLabel" aria-hidden="true">
-    <div class="modal-dialog modal-scanner-left">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="modalScannerLabel">Scan Barcode Produk</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div id="reader" style="width: 100%;"></div>
-                
-                <hr class="my-3">
-                
-                <!-- OPSI UPLOAD GAMBAR BARCODE -->
-                <div class="mb-2">
-                    <label class="form-label small fw-bold text-muted">Atau Upload Gambar Barcode (Tanpa Kamera):</label>
-                    <input type="file" id="qr-input-file" accept="image/*" class="form-control form-control-sm">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     $(document).ready(function() {
         $('#select-produk').select2({
-            theme: 'bootstrap-5',
             placeholder: '-- Cari Produk --',
             allowClear: true
         });
@@ -314,7 +337,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         $('#select-produk').on('change', function() {
             const stokTersedia = $(this).find(':selected').data('stok');
             const inputQty = $('#input_qty');
-            
             if (stokTersedia !== undefined) {
                 inputQty.attr('max', stokTersedia);
                 if (parseInt(inputQty.val()) > stokTersedia) {
@@ -324,9 +346,14 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 inputQty.removeAttr('max');
             }
         });
+
+        // CEK PERSISTENCE SCANNER
+        if (localStorage.getItem('keepScannerOpen') === 'true') {
+            localStorage.removeItem('keepScannerOpen');
+            openScanner();
+        }
     });
 
-    // Toggle Sesuai Metode Bayar
     function toggleMetodeBayar() {
         const metode = document.getElementById('metode_bayar').value;
         const grandTotal = parseFloat(document.getElementById('grand_total').value) || 0;
@@ -340,20 +367,17 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         } else {
             inputBayar.value = '';
             inputBayar.readOnly = false;
-            if (quickCash) quickCash.style.display = 'flex';
+            if (quickCash) quickCash.style.display = 'grid';
         }
     }
 
-    // Function Quick Cash Nominal
     function setNominal(amount) {
         document.getElementById('input_bayar').value = amount;
     }
 
-    // Validasi Pembayaran Kurang
     function verifikasiPembayaran() {
         const grandTotal = parseFloat(document.getElementById('grand_total').value) || 0;
         const bayar = parseFloat(document.getElementById('input_bayar').value) || 0;
-
         if (bayar < grandTotal) {
             alert('Uang pembayaran kurang dari total belanja!');
             return false;
@@ -362,30 +386,31 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     }
 
     // ==========================================
-    // SCRIPT INTEGRASI CAMERA BARCODE SCANNER
+    // LOGIKA SCANNER DENGAN MODAL & OVERLAY TAILWIND
     // ==========================================
     let html5QrcodeScanner = null;
 
-    const modalScanner = document.getElementById('modalScanner');
-    
-    modalScanner.addEventListener('shown.bs.modal', function () {
-        html5QrcodeScanner = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+    function openScanner() {
+        document.getElementById('modalScanner').classList.remove('hidden');
+        document.getElementById('scannerOverlay').classList.remove('hidden');
         
-        html5QrcodeScanner.start(
-            { facingMode: "environment" }, 
-            config, 
-            onScanSuccess
-        ).catch(err => {
-            alert("Kamera tidak dapat diakses: " + err);
-        });
-    });
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 140 } };
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess
+            ).catch(err => {
+                alert("Kamera tidak dapat diakses: " + err);
+            });
+        }
+    }
 
-    modalScanner.addEventListener('hidden.bs.modal', function () {
-        stopScanner();
-    });
-
-    function stopScanner() {
+    function closeScanner() {
+        document.getElementById('modalScanner').classList.add('hidden');
+        document.getElementById('scannerOverlay').classList.add('hidden');
+        
         if (html5QrcodeScanner) {
             html5QrcodeScanner.stop().then(() => {
                 html5QrcodeScanner.clear();
@@ -394,55 +419,39 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         }
     }
 
-    function onScanSuccess(decodedText) {
-        let found = false;
+    let isScanning = false;
 
-        // 1. Cari opsi di Select2 yang cocok dengan hasil scan
+    function onScanSuccess(decodedText) {
+        if (isScanning) return;
+        isScanning = true;
+
+        let found = false;
         $('#select-produk option').each(function() {
             const kodeBarang = $(this).data('kode');
             if (kodeBarang && kodeBarang.toString().trim() === decodedText.trim()) {
                 $('#select-produk').val($(this).val()).trigger('change');
                 found = true;
-                return false; // Break loop
+                return false;
             }
         });
 
         if (found) {
-            // 2. Set QTY otomatis jadi 1
             $('#input_qty').val(1);
-
-            // 3. Matikan kamera & tutup modal
-            const bsModal = bootstrap.Modal.getInstance(modalScanner);
-            if (bsModal) {
-                bsModal.hide();
-            }
-            stopScanner();
-
-            // 4. Otomatis submit form (langsung masuk keranjang)
-            setTimeout(() => {
-                $('button[name="tambah_keranjang"]').click();
-            }, 300);
-
+            localStorage.setItem('keepScannerOpen', 'true');
+            $('#btn_tambah_keranjang').click();
         } else {
             alert("Barang dengan kode barcode: " + decodedText + " tidak ditemukan!");
+            setTimeout(() => { isScanning = false; }, 1500);
         }
     }
 
-    // Tambahan Handler untuk Upload Gambar Barcode via File Laptop
     document.getElementById('qr-input-file').addEventListener('change', e => {
-        if (e.target.files.length == 0) {
-            return;
-        }
+        if (e.target.files.length == 0) return;
         const imageFile = e.target.files[0];
         const html5QrCode = new Html5Qrcode("reader");
-        
         html5QrCode.scanFile(imageFile, true)
-            .then(decodedText => {
-                onScanSuccess(decodedText);
-            })
-            .catch(err => {
-                alert("Gagal membaca barcode dari gambar ini. Pastikan gambar jelas!");
-            });
+            .then(decodedText => onScanSuccess(decodedText))
+            .catch(err => alert("Gagal membaca barcode dari gambar!"));
     });
 </script>
 
