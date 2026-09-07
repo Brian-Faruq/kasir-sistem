@@ -153,7 +153,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 <div id="scannerOverlay" class="fixed inset-0 bg-black/60 z-30 hidden transition-opacity"></div>
 
 <!-- NAVBAR -->
-<nav class="bg-gradient-to-r from-impian-orange to-impian-amber shadow-lg mb-6 relative z-10">
+<nav class="bg-gradient-to-r from-impian-orange to-impian-amber shadow-lg mb-4 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <span class="text-white font-extrabold text-xl tracking-wider">POS SEKOLAH IMPIAN</span>
@@ -168,13 +168,13 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
     </div>
 </nav>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 relative">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 relative">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- KOLOM KIRI: KERANJANG BELANJA (MURNI TABEL) -->
-        <div class="lg:col-span-8 relative z-10">
+        <!-- KOLOM KIRI: KERANJANG BELANJA -->
+        <div class="lg:col-span-7 relative z-10">
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
-                <div class="bg-white border-b border-slate-200 px-5 py-4 flex justify-between items-center">
+                <div class="bg-white border-b border-slate-200 px-5 py-3.5 flex justify-between items-center">
                     <span class="font-bold text-impian-navy text-lg">Keranjang Belanja</span>
                     <?php if (!empty($_SESSION['cart'])): ?>
                         <a href="kasir.php?batal=1" class="text-xs text-red-600 hover:text-red-800 font-bold border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition" onclick="return confirm('Kosongkan keranjang belanja?')">Kosongkan Keranjang</a>
@@ -186,11 +186,11 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
-                                <th class="py-3.5 px-4">Produk</th>
-                                <th class="py-3.5 px-4">Harga</th>
-                                <th class="py-3.5 px-4">Qty</th>
-                                <th class="py-3.5 px-4">Subtotal</th>
-                                <th class="py-3.5 px-4 text-center">Aksi</th>
+                                <th class="py-3 px-4">Produk</th>
+                                <th class="py-3 px-4">Harga</th>
+                                <th class="py-3 px-4">Qty</th>
+                                <th class="py-3 px-4">Subtotal</th>
+                                <th class="py-3 px-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -225,81 +225,90 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         </div>
 
         <!-- KOLOM KANAN: PILIH BARANG & PEMBAYARAN -->
-        <div class="lg:col-span-4 space-y-6 relative z-10">
+        <div class="lg:col-span-5 space-y-4 relative z-10">
             
             <!-- CARD 1: PILIH BARANG -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
-                <div class="bg-impian-navy px-5 py-4 flex justify-between items-center text-white">
+                <div class="bg-impian-navy px-5 py-3 flex justify-between items-center text-white">
                     <h2 class="font-bold text-base">Pilih Barang</h2>
                     <button type="button" onclick="openScanner()" class="bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition shadow">
                         📷 Scan Barcode
                     </button>
                 </div>
-                <div class="p-5">
+                <div class="p-4">
                     <form action="" method="POST">
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Nama / Kode Barang</label>
-                            <select name="product_id" id="select-produk" class="w-full" required>
-                                <option value="">-- Cari Produk --</option>
-                                <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
-                                    <option value="<?= $p['id'] ?>" data-kode="<?= $p['kode_barang'] ?>" data-stok="<?= $p['stok'] ?>">
-                                        <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
-                                    </option>
-                                <?php endwhile; ?>
-                            </select>
+                        <div class="grid grid-cols-12 gap-3 mb-3">
+                            <div class="col-span-8">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Nama / Kode Barang</label>
+                                <select name="product_id" id="select-produk" class="w-full" required>
+                                    <option value="">-- Cari Produk --</option>
+                                    <?php while ($p = mysqli_fetch_assoc($products_list)): ?>
+                                        <option value="<?= $p['id'] ?>" data-kode="<?= $p['kode_barang'] ?>" data-stok="<?= $p['stok'] ?>">
+                                            <?= $p['kode_barang'] ?> - <?= $p['nama_barang'] ?> (Stok: <?= $p['stok'] ?>)
+                                        </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-span-4">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Jumlah (Qty)</label>
+                                <input type="number" name="qty" id="input_qty" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="1" min="1" required>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Jumlah (Qty)</label>
-                            <input type="number" name="qty" id="input_qty" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="1" min="1" required>
-                        </div>
-                        <button type="submit" name="tambah_keranjang" id="btn_tambah_keranjang" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow">
+                        <button type="submit" name="tambah_keranjang" id="btn_tambah_keranjang" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition shadow">
                             + Tambah Ke Keranjang
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- CARD 2: PEMBAYARAN -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-5">
+            <!-- CARD 2: PEMBAYARAN (DIBUAT GRID 2 KOLOM SUPAYA LEBIH PENDEK & MUAT 1 LAYAR) -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-4">
                 <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
-                    <div class="space-y-4">
-                        <!-- TOTAL BELANJA -->
-                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Belanja</span>
-                            <h3 class="text-3xl font-black text-impian-orange">Rp <?= number_format($grand_total, 0, ',', '.') ?></h3>
-                            <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
-                        </div>
-
-                        <!-- METODE PEMBAYARAN -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Metode Pembayaran</label>
-                            <select name="metode_bayar" id="metode_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" onchange="toggleMetodeBayar()">
-                                <option value="cash">CASH (Tunai)</option>
-                                <option value="qris">QRIS (Nontunai)</option>
-                            </select>
-                        </div>
-
-                        <!-- QUICK CASH -->
-                        <?php if (!empty($_SESSION['cart'])): ?>
-                            <div id="quick_cash_container" class="grid grid-cols-5 gap-1.5">
-                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
-                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(10000)">10k</button>
-                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(20000)">20k</button>
-                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(50000)">50k</button>
-                                <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(100000)">100k</button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                        
+                        <!-- SISU KIRI PEMBAYARAN -->
+                        <div class="space-y-3">
+                            <!-- TOTAL BELANJA -->
+                            <div class="bg-slate-50 py-3 px-3 rounded-lg border border-slate-100 text-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Belanja</span>
+                                <h3 class="text-2xl font-black text-impian-orange">Rp <?= number_format($grand_total, 0, ',', '.') ?></h3>
+                                <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
                             </div>
-                        <?php endif; ?>
 
-                        <!-- NOMINAL INPUT -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Nominal Uang Bayar</label>
-                            <input type="number" name="bayar" id="input_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Masukkan Nominal" required>
+                            <!-- METODE PEMBAYARAN -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Metode Pembayaran</label>
+                                <select name="metode_bayar" id="metode_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" onchange="toggleMetodeBayar()">
+                                    <option value="cash">CASH (Tunai)</option>
+                                    <option value="qris">QRIS (Nontunai)</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <!-- TOMBOL TRANSAKSI -->
-                        <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-bold py-3 rounded-lg shadow-md transition text-sm tracking-wide uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
-                            PROSES TRANSAKSI
-                        </button>
+                        <!-- SISI KANAN PEMBAYARAN -->
+                        <div class="space-y-3">
+                            <!-- QUICK CASH -->
+                            <?php if (!empty($_SESSION['cart'])): ?>
+                                <div id="quick_cash_container" class="grid grid-cols-5 gap-1">
+                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
+                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(10000)">10k</button>
+                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(20000)">20k</button>
+                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(50000)">50k</button>
+                                    <button type="button" class="bg-slate-100 border border-slate-300 hover:bg-slate-200 text-xs font-bold py-1.5 rounded-md text-slate-700 text-center" onclick="setNominal(100000)">100k</button>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- NOMINAL INPUT -->
+                            <div>
+                                <input type="number" name="bayar" id="input_bayar" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-bold focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nominal Uang Bayar" required>
+                            </div>
+
+                            <!-- TOMBOL TRANSAKSI -->
+                            <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-bold py-2.5 rounded-lg shadow transition text-xs tracking-wide uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
+                                PROSES TRANSAKSI
+                            </button>
+                        </div>
+
                     </div>
                 </form>
             </div>
@@ -347,7 +356,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             }
         });
 
-        // CEK PERSISTENCE SCANNER
         if (localStorage.getItem('keepScannerOpen') === 'true') {
             localStorage.removeItem('keepScannerOpen');
             openScanner();
@@ -385,9 +393,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         return true;
     }
 
-    // ==========================================
-    // LOGIKA SCANNER DENGAN MODAL & OVERLAY TAILWIND
-    // ==========================================
     let html5QrcodeScanner = null;
 
     function openScanner() {
