@@ -161,7 +161,22 @@ if (isset($_POST['login'])) {
                     <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-sm">🔒</span>
-                        <input type="password" name="password" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" placeholder="Masukkan password" required>
+                        
+                        <!-- Input Password dengan Padding Kanan (pr-10) agar teks tidak tertimpa ikon mata -->
+                        <input type="password" id="passwordInput" name="password" class="w-full border border-slate-300 rounded-lg pl-9 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" placeholder="Masukkan password" required>
+                        
+                        <!-- Tombol Toggle Mata -->
+                        <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none">
+                            <!-- Mata Terbuka -->
+                            <svg id="eyeOpen" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <!-- Mata Tertutup -->
+                            <svg id="eyeClose" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 013.682-.763c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m-1.748 1.137A9.972 9.972 0 0112 19a9.97 9.97 0 01-2.125-.225m0 0a3 3 0 01-4.243-4.243m4.243 4.243L3 3l18 18" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -179,6 +194,25 @@ if (isset($_POST['login'])) {
         </div>
 
     </div>
+
+    <!-- Script JS untuk Toggle Show/Hide Password -->
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('passwordInput');
+            const eyeOpen = document.getElementById('eyeOpen');
+            const eyeClose = document.getElementById('eyeClose');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeOpen.classList.remove('hidden');
+                eyeClose.classList.add('hidden');
+            } else {
+                passwordInput.type = 'password';
+                eyeOpen.classList.add('hidden');
+                eyeClose.classList.remove('hidden');
+            }
+        }
+    </script>
 
 </body>
 </html>
