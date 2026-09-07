@@ -111,7 +111,6 @@ if (isset($_POST['edit_user'])) {
 if (isset($_GET['hapus_user'])) {
     $id_hapus_user = intval($_GET['hapus_user']);
     
-    // Cegah Owner menghapus dirinya sendiri
     if ($id_hapus_user === $_SESSION['user_id']) {
         echo "<script>alert('Anda tidak bisa menghapus akun Anda sendiri yang sedang login!'); window.location='admin.php';</script>";
     } else {
@@ -127,7 +126,6 @@ if (isset($_GET['hapus_user'])) {
 
 // ==================== 3. QUERY DATA ====================
 
-// METRIK RINGKASAN DASHBOARD
 $tgl_hari_ini = date('Y-m-d');
 $query_omzet = mysqli_query($koneksi, "SELECT SUM(total_harga) AS omzet FROM transactions WHERE DATE(created_at) = '$tgl_hari_ini'");
 $data_omzet = mysqli_fetch_assoc($query_omzet);
@@ -136,11 +134,9 @@ $omzet_hari_ini = $data_omzet['omzet'] ?? 0;
 $query_total_produk = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM products");
 $total_produk = mysqli_fetch_assoc($query_total_produk)['total'];
 
-// FILTER STOK MENIPIS (stok <= 3)
 $query_stok_menipis = mysqli_query($koneksi, "SELECT COUNT(*) AS total_menipis FROM products WHERE stok <= 3");
 $stok_menipis_count = mysqli_fetch_assoc($query_stok_menipis)['total_menipis'];
 
-// CEK STATUS FILTER TABEL PRODUK
 $filter_stok = $_GET['filter'] ?? 'all';
 $sql_products = "SELECT p.*, c.nama_kategori FROM products p LEFT JOIN categories c ON p.category_id = c.id";
 
@@ -152,7 +148,6 @@ $sql_products .= " ORDER BY p.id DESC";
 $categories_query = "SELECT * FROM categories ORDER BY nama_kategori ASC";
 $products = mysqli_query($koneksi, $sql_products);
 
-// FETCH ALL USERS
 $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 ?>
 <!DOCTYPE html>
@@ -160,352 +155,434 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Owner - POS UMKM</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Dashboard Admin - POS SEKOLAH IMPIAN</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        impian: {
+                            orange: '#E85D04',
+                            amber: '#F48C06',
+                            navy: '#1A365D',
+                            teal: '#0D9488',
+                            darkteal: '#0F766E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-light pb-5">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="admin.php">POS UMKM - Admin Panel</a>
-        <div class="d-flex text-white align-items-center">
-            <span class="me-3">Halo, <strong><?= $_SESSION['nama'] ?></strong> (Owner)</span>
-            <a href="laporan.php" class="btn btn-outline-warning btn-sm me-2">Laporan Keuangan</a>
-            <a href="kasir.php" class="btn btn-outline-info btn-sm me-2">Ke Kasir</a>
-            <a href="logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
-        </div>
-    </div>
-</nav>
+    <!-- NAVBAR -->
+    <nav class="bg-impian-navy text-white shadow-lg border-b border-slate-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Title -->
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">📊</span>
+                    <span class="font-bold text-base sm:text-lg tracking-wide">POS SEKOLAH IMPIAN <span class="text-xs bg-impian-orange text-white px-2 py-0.5 rounded-md uppercase font-semibold">Admin Panel</span></span>
+                </div>
 
-<div class="container-fluid px-4">
-
-    <!-- PERINGATAN / ALERT BADGE STOK MENIPIS -->
-    <?php if ($stok_menipis_count > 0): ?>
-        <div class="alert alert-warning alert-dismissible fade show d-flex justify-content-between align-items-center shadow-sm" role="alert">
-            <div>
-                <strong>Perhatian!</strong> Terdapat <strong><?= $stok_menipis_count ?> produk</strong> yang stoknya menipis (&le; 3 item). Segera lakukan restok!
-            </div>
-            <a href="admin.php?filter=menipis" class="btn btn-warning btn-sm text-dark fw-bold">Lihat Barang Menipis &rarr;</a>
-        </div>
-    <?php endif; ?>
-
-    <!-- METRIK RINGKASAN -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Omzet Hari Ini</h6>
-                    <h3 class="fw-bold mb-0">Rp <?= number_format($omzet_hari_ini, 0, ',', '.') ?></h3>
+                <!-- User & Action Buttons -->
+                <div class="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                    <span class="hidden md:inline text-slate-300">Halo, <strong class="text-white"><?= $_SESSION['nama'] ?></strong> (Owner)</span>
+                    
+                    <a href="laporan.php" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1">
+                        📈 <span class="hidden sm:inline">Laporan</span>
+                    </a>
+                    <a href="kasir.php" class="bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1">
+                        🛒 <span class="hidden sm:inline">Ke Kasir</span>
+                    </a>
+                    <a href="logout.php" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 px-3 py-1.5 rounded-lg transition font-medium">
+                        Logout
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Total Jenis Barang</h6>
-                    <h3 class="fw-bold mb-0"><?= $total_produk ?> Item</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card <?= $stok_menipis_count > 0 ? 'bg-danger' : 'bg-secondary' ?> text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Stok Menipis (&le; 3)</h6>
-                    <h3 class="fw-bold mb-0"><?= $stok_menipis_count ?> Item</h3>
-                </div>
-            </div>
-        </div>
-    </div>
+    </nav>
 
-    <div class="row">
-        <!-- ================= KOLOM KIRI (FORM PRODUK & USER) ================= -->
-        <div class="col-md-4">
-            
-            <!-- 1. FORM TAMBAH PRODUK -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold">Tambah Produk Baru</div>
-                <div class="card-body">
-                    <form action="" method="POST">
-                        <div class="mb-2">
-                            <label class="form-label small">Kode Barang / Barcode</label>
-                            <input type="text" name="kode_barang" class="form-control" placeholder="cth: BRG004" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Nama Barang</label>
-                            <input type="text" name="nama_barang" class="form-control" placeholder="Nama Produk" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Kategori</label>
-                            <select name="category_id" class="form-select" required>
-                                <option value="">-- Pilih Kategori --</option>
-                                <?php 
-                                $cat_res = mysqli_query($koneksi, $categories_query);
-                                while ($c = mysqli_fetch_assoc($cat_res)): 
-                                ?>
-                                    <option value="<?= $c['id'] ?>"><?= $c['nama_kategori'] ?></option>
-                                <?php endwhile; ?>
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Harga Beli (HPP)</label>
-                            <input type="number" name="harga_beli" class="form-control" placeholder="0" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Harga Jual</label>
-                            <input type="number" name="harga_jual" class="form-control" placeholder="0" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small">Stok Awal</label>
-                            <input type="number" name="stok" class="form-control" value="10" required>
-                        </div>
-                        <button type="submit" name="tambah_produk" class="btn btn-primary w-100 fw-bold">Simpan Produk</button>
-                    </form>
-                </div>
-            </div>
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
-            <!-- 2. FORM TAMBAH USER / KASIR (DITARUH DI BAWAH FORM TAMBAH PRODUK) -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold text-success">Tambah User / Kasir Baru</div>
-                <div class="card-body">
-                    <form action="" method="POST">
-                        <div class="mb-2">
-                            <label class="form-label small">Nama Lengkap</label>
-                            <input type="text" name="nama" class="form-control" placeholder="cth: Kasir 2" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Username</label>
-                            <input type="text" name="username" class="form-control" placeholder="cth: kasir2" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Password</label>
-                            <input type="password" name="password" class="form-control" placeholder="Masukkan Password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small">Role / Hak Akses</label>
-                            <select name="role" class="form-select" required>
-                                <option value="kasir">Kasir</option>
-                                <option value="owner">Owner / Admin</option>
-                            </select>
-                        </div>
-                        <button type="submit" name="tambah_user" class="btn btn-success w-100 fw-bold">Tambah User Baru</button>
-                    </form>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- ================= KOLOM KANAN (TABEL PRODUK & USER) ================= -->
-        <div class="col-md-8">
-            
-            <!-- 1. TABEL INVENTARIS PRODUK -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <span class="fw-bold">
-                        Daftar Stok Produk 
-                        <?= $filter_stok === 'menipis' ? '<span class="badge bg-warning text-dark">(Filter: Menipis)</span>' : '' ?>
-                    </span>
+        <!-- ALERT STOK MENIPIS -->
+        <?php if ($stok_menipis_count > 0): ?>
+            <div class="mb-6 bg-amber-50 border-l-4 border-impian-amber p-4 rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-center gap-3 text-amber-800 text-xs sm:text-sm">
+                    <span class="text-xl">⚠️</span>
                     <div>
-                        <a href="admin.php" class="btn btn-sm <?= $filter_stok === 'all' ? 'btn-dark' : 'btn-outline-dark' ?>">Semua</a>
-                        <a href="admin.php?filter=menipis" class="btn btn-sm <?= $filter_stok === 'menipis' ? 'btn-danger' : 'btn-outline-danger' ?>">
-                            Menipis (<?= $stok_menipis_count ?>)
-                        </a>
+                        <strong class="font-bold">Perhatian!</strong> Terdapat <strong class="underline"><?= $stok_menipis_count ?> produk</strong> yang stoknya menipis (&le; 3 item). Segera restok!
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Kode</th>
-                                <th>Nama Barang</th>
-                                <th>Harga Beli</th>
-                                <th>Harga Jual</th>
-                                <th>Stok</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (mysqli_num_rows($products) > 0): ?>
-                                <?php while ($row = mysqli_fetch_assoc($products)): ?>
-                                    <tr>
-                                        <td><code><?= $row['kode_barang'] ?></code></td>
-                                        <td><?= $row['nama_barang'] ?></td>
-                                        <td>Rp <?= number_format($row['harga_beli'], 0, ',', '.') ?></td>
-                                        <td>Rp <?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
-                                        <td>
-                                            <?php if ($row['stok'] <= 3): ?>
-                                                <span class="badge bg-danger"><?= $row['stok'] ?> (Menipis)</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-success"><?= $row['stok'] ?></span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id'] ?>">Edit</button>
-                                            <a href="admin.php?hapus=<?= $row['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus barang ini?')">Hapus</a>
-                                        </td>
-                                    </tr>
+                <a href="admin.php?filter=menipis" class="bg-impian-amber hover:bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow text-center">
+                    Lihat Barang Menipis &rarr;
+                </a>
+            </div>
+        <?php endif; ?>
 
-                                    <!-- MODAL EDIT PRODUK -->
-                                    <div class="modal fade" id="modalEdit<?= $row['id'] ?>" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form action="" method="POST">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Edit Produk</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Kode Barang / Barcode</label>
-                                                            <input type="text" name="kode_barang" class="form-control" value="<?= $row['kode_barang'] ?>" required>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Nama Barang</label>
-                                                            <input type="text" name="nama_barang" class="form-control" value="<?= $row['nama_barang'] ?>" required>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Kategori</label>
-                                                            <select name="category_id" class="form-select" required>
-                                                                <?php 
-                                                                $cat_res_modal = mysqli_query($koneksi, $categories_query);
-                                                                while ($cm = mysqli_fetch_assoc($cat_res_modal)): 
-                                                                ?>
-                                                                    <option value="<?= $cm['id'] ?>" <?= $cm['id'] == $row['category_id'] ? 'selected' : '' ?>>
-                                                                        <?= $cm['nama_kategori'] ?>
-                                                                    </option>
-                                                                <?php endwhile; ?>
-                                                            </select>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Harga Beli (HPP)</label>
-                                                            <input type="number" name="harga_beli" class="form-control" value="<?= $row['harga_beli'] ?>" required>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Harga Jual</label>
-                                                            <input type="number" name="harga_jual" class="form-control" value="<?= $row['harga_jual'] ?>" required>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Stok</label>
-                                                            <input type="number" name="stok" class="form-control" value="<?= $row['stok'] ?>" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" name="edit_produk" class="btn btn-primary fw-bold">Simpan Perubahan</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- END MODAL EDIT PRODUK -->
-
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-3">Tidak ada produk yang memenuhi kriteria filter.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+        <!-- METRIK DASHBOARD -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Omzet Hari Ini -->
+            <div class="bg-gradient-to-r from-impian-navy to-slate-800 rounded-xl p-5 text-white shadow-md border border-slate-700">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-slate-300 text-xs font-medium uppercase tracking-wider">Omzet Hari Ini</p>
+                        <h3 class="text-2xl font-black mt-1">Rp <?= number_format($omzet_hari_ini, 0, ',', '.') ?></h3>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-xl text-xl">💰</div>
                 </div>
             </div>
 
-            <!-- 2. TABEL KELOLA USER / KASIR (DITARUH DI BAWAH TABEL PRODUK) -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold text-success">
-                    Daftar Pengguna / Kasir
+            <!-- Total Produk -->
+            <div class="bg-gradient-to-r from-impian-teal to-impian-darkteal rounded-xl p-5 text-white shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-teal-100 text-xs font-medium uppercase tracking-wider">Total Jenis Barang</p>
+                        <h3 class="text-2xl font-black mt-1"><?= $total_produk ?> <span class="text-sm font-normal text-teal-200">Item</span></h3>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-xl text-xl">📦</div>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nama Lengkap</th>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (mysqli_num_rows($users_query) > 0): ?>
-                                <?php while ($usr = mysqli_fetch_assoc($users_query)): ?>
-                                    <tr>
-                                        <td><code>#<?= $usr['id'] ?></code></td>
-                                        <td class="fw-bold"><?= $usr['nama'] ?></td>
-                                        <td><?= $usr['username'] ?></td>
-                                        <td>
-                                            <?php if ($usr['role'] === 'owner'): ?>
-                                                <span class="badge bg-primary">Owner</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-info text-dark">Kasir</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalEditUser<?= $usr['id'] ?>">Edit</button>
-                                            <?php if ($usr['id'] != $_SESSION['user_id']): ?>
-                                                <a href="admin.php?hapus_user=<?= $usr['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus user ini?')">Hapus</a>
-                                            <?php else: ?>
-                                                <button class="btn btn-secondary btn-sm" disabled>Saya</button>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
+            </div>
 
-                                    <!-- MODAL EDIT USER -->
-                                    <div class="modal fade" id="modalEditUser<?= $usr['id'] ?>" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form action="" method="POST">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Edit User / Kasir</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <!-- Stok Menipis -->
+            <div class="bg-gradient-to-r from-impian-orange to-red-600 rounded-xl p-5 text-white shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-orange-100 text-xs font-medium uppercase tracking-wider">Stok Menipis (&le; 3)</p>
+                        <h3 class="text-2xl font-black mt-1"><?= $stok_menipis_count ?> <span class="text-sm font-normal text-orange-200">Item</span></h3>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-xl text-xl">⚠️</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- ================= KOLOM KIRI: FORM PRODUCT & USER ================= -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <!-- 1. FORM TAMBAH PRODUK -->
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span>➕</span> Tambah Produk Baru
+                        </h3>
+                    </div>
+                    <div class="p-5">
+                        <form action="" method="POST" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Kode Barang / Barcode</label>
+                                <input type="text" name="kode_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="cth: BRG004" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
+                                <input type="text" name="nama_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nama Produk" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Kategori</label>
+                                <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" required>
+                                    <option value="">-- Pilih Kategori --</option>
+                                    <?php 
+                                    $cat_res = mysqli_query($koneksi, $categories_query);
+                                    while ($c = mysqli_fetch_assoc($cat_res)): 
+                                    ?>
+                                        <option value="<?= $c['id'] ?>"><?= $c['nama_kategori'] ?></option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Harga Beli (HPP)</label>
+                                    <input type="number" name="harga_beli" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="0" required>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Harga Jual</label>
+                                    <input type="number" name="harga_jual" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="0" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Stok Awal</label>
+                                <input type="number" name="stok" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="10" required>
+                            </div>
+                            <button type="submit" name="tambah_produk" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow text-xs uppercase tracking-wider mt-2">
+                                Simpan Produk
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 2. FORM TAMBAH USER / KASIR -->
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                        <h3 class="font-bold text-impian-darkteal text-sm flex items-center gap-2">
+                            <span>👤</span> Tambah User / Kasir Baru
+                        </h3>
+                    </div>
+                    <div class="p-5">
+                        <form action="" method="POST" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Nama Lengkap</label>
+                                <input type="text" name="nama" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="cth: Kasir 2" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Username</label>
+                                <input type="text" name="username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="cth: kasir2" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Password</label>
+                                <input type="password" name="password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="Masukkan Password" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Role / Hak Akses</label>
+                                <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" required>
+                                    <option value="kasir">Kasir</option>
+                                    <option value="owner">Owner / Admin</option>
+                                </select>
+                            </div>
+                            <button type="submit" name="tambah_user" class="w-full bg-impian-teal hover:bg-teal-700 text-white font-bold py-2.5 rounded-lg transition shadow text-xs uppercase tracking-wider mt-2">
+                                Tambah User Baru
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= KOLOM KANAN: TABEL PRODUK & USER ================= -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- 1. TABEL INVENTARIS PRODUK -->
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span>📦</span> Daftar Stok Produk 
+                            <?= $filter_stok === 'menipis' ? '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">(Filter: Menipis)</span>' : '' ?>
+                        </h3>
+                        <div class="flex gap-1.5 text-xs">
+                            <a href="admin.php" class="px-3 py-1 rounded-lg font-semibold transition <?= $filter_stok === 'all' ? 'bg-slate-800 text-white shadow' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>">Semua</a>
+                            <a href="admin.php?filter=menipis" class="px-3 py-1 rounded-lg font-semibold transition <?= $filter_stok === 'menipis' ? 'bg-red-600 text-white shadow' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' ?>">
+                                Menipis (<?= $stok_menipis_count ?>)
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3">Kode</th>
+                                    <th class="px-4 py-3">Nama Barang</th>
+                                    <th class="px-4 py-3">Harga Beli</th>
+                                    <th class="px-4 py-3">Harga Jual</th>
+                                    <th class="px-4 py-3">Stok</th>
+                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php if (mysqli_num_rows($products) > 0): ?>
+                                    <?php while ($row = mysqli_fetch_assoc($products)): ?>
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 font-mono font-medium text-slate-500"><?= $row['kode_barang'] ?></td>
+                                            <td class="px-4 py-3 font-semibold text-slate-800"><?= $row['nama_barang'] ?></td>
+                                            <td class="px-4 py-3">Rp <?= number_format($row['harga_beli'], 0, ',', '.') ?></td>
+                                            <td class="px-4 py-3 font-medium text-slate-800">Rp <?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
+                                            <td class="px-4 py-3">
+                                                <?php if ($row['stok'] <= 3): ?>
+                                                    <span class="inline-block bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-red-200"><?= $row['stok'] ?> (Menipis)</span>
+                                                <?php else: ?>
+                                                    <span class="inline-block bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-emerald-200"><?= $row['stok'] ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-4 py-3 text-center space-x-1">
+                                                <button onclick="openModal('modalEditProduct<?= $row['id'] ?>')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">Edit</button>
+                                                <a href="admin.php?hapus=<?= $row['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 rounded transition text-[11px] inline-block" onclick="return confirm('Yakin ingin menghapus barang ini?')">Hapus</a>
+                                            </td>
+                                        </tr>
+
+                                        <!-- MODAL EDIT PRODUK -->
+                                        <div id="modalEditProduct<?= $row['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+                                            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+                                                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
+                                                    <h3 class="font-bold text-sm">Edit Produk</h3>
+                                                    <button onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
+                                                </div>
+                                                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
+                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Kode Barang / Barcode</label>
+                                                        <input type="text" name="kode_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['kode_barang'] ?>" required>
                                                     </div>
-                                                    <div class="modal-body">
-                                                        <input type="hidden" name="id_user" value="<?= $usr['id'] ?>">
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Nama Lengkap</label>
-                                                            <input type="text" name="nama" class="form-control" value="<?= $usr['nama'] ?>" required>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
+                                                        <input type="text" name="nama_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['nama_barang'] ?>" required>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Kategori</label>
+                                                        <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" required>
+                                                            <?php 
+                                                            $cat_res_modal = mysqli_query($koneksi, $categories_query);
+                                                            while ($cm = mysqli_fetch_assoc($cat_res_modal)): 
+                                                            ?>
+                                                                <option value="<?= $cm['id'] ?>" <?= $cm['id'] == $row['category_id'] ? 'selected' : '' ?>>
+                                                                    <?= $cm['nama_kategori'] ?>
+                                                                </option>
+                                                            <?php endwhile; ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label class="block font-bold text-slate-600 mb-1">Harga Beli (HPP)</label>
+                                                            <input type="number" name="harga_beli" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_beli'] ?>" required>
                                                         </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Username</label>
-                                                            <input type="text" name="username" class="form-control" value="<?= $usr['username'] ?>" required>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Password Baru <span class="text-muted">(Kosongkan jika tidak ingin ganti)</span></label>
-                                                            <input type="password" name="password" class="form-control" placeholder="Password Baru">
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label small">Role / Hak Akses</label>
-                                                            <select name="role" class="form-select" required>
-                                                                <option value="kasir" <?= $usr['role'] === 'kasir' ? 'selected' : '' ?>>Kasir</option>
-                                                                <option value="owner" <?= $usr['role'] === 'owner' ? 'selected' : '' ?>>Owner / Admin</option>
-                                                            </select>
+                                                        <div>
+                                                            <label class="block font-bold text-slate-600 mb-1">Harga Jual</label>
+                                                            <input type="number" name="harga_jual" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_jual'] ?>" required>
                                                         </div>
                                                     </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" name="edit_user" class="btn btn-success fw-bold">Simpan Perubahan</button>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Stok</label>
+                                                        <input type="number" name="stok" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['stok'] ?>" required>
+                                                    </div>
+                                                    <div class="flex justify-end gap-2 pt-2">
+                                                        <button type="button" onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
+                                                        <button type="submit" name="edit_produk" class="px-4 py-2 bg-impian-orange hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
                                                     </div>
                                                 </form>
                                             </div>
                                         </div>
-                                    </div>
-                                    <!-- END MODAL EDIT USER -->
+                                        <!-- END MODAL EDIT PRODUK -->
 
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Belum ada user.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-slate-400 py-6">Tidak ada produk yang memenuhi kriteria filter.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <!-- 2. TABEL KELOLA USER / KASIR -->
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span>👥</span> Daftar Pengguna / Kasir
+                        </h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3">ID</th>
+                                    <th class="px-4 py-3">Nama Lengkap</th>
+                                    <th class="px-4 py-3">Username</th>
+                                    <th class="px-4 py-3">Role</th>
+                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php if (mysqli_num_rows($users_query) > 0): ?>
+                                    <?php while ($usr = mysqli_fetch_assoc($users_query)): ?>
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 font-mono text-slate-500">#<?= $usr['id'] ?></td>
+                                            <td class="px-4 py-3 font-bold text-slate-800"><?= $usr['nama'] ?></td>
+                                            <td class="px-4 py-3"><?= $usr['username'] ?></td>
+                                            <td class="px-4 py-3">
+                                                <?php if ($usr['role'] === 'owner'): ?>
+                                                    <span class="inline-block bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-blue-200">Owner</span>
+                                                <?php else: ?>
+                                                    <span class="inline-block bg-teal-100 text-teal-700 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-teal-200">Kasir</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-4 py-3 text-center space-x-1">
+                                                <button onclick="openModal('modalEditUser<?= $usr['id'] ?>')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">Edit</button>
+                                                <?php if ($usr['id'] != $_SESSION['user_id']): ?>
+                                                    <a href="admin.php?hapus_user=<?= $usr['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 rounded transition text-[11px] inline-block" onclick="return confirm('Yakin ingin menghapus user ini?')">Hapus</a>
+                                                <?php else: ?>
+                                                    <button class="bg-slate-300 text-slate-600 font-bold px-2.5 py-1 rounded text-[11px] cursor-not-allowed" disabled>Saya</button>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+
+                                        <!-- MODAL EDIT USER -->
+                                        <div id="modalEditUser<?= $usr['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+                                            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+                                                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
+                                                    <h3 class="font-bold text-sm">Edit User / Kasir</h3>
+                                                    <button onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
+                                                </div>
+                                                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
+                                                    <input type="hidden" name="id_user" value="<?= $usr['id'] ?>">
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Nama Lengkap</label>
+                                                        <input type="text" name="nama" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['nama'] ?>" required>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Username</label>
+                                                        <input type="text" name="username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['username'] ?>" required>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Password Baru <span class="text-slate-400 font-normal">(Kosongkan jika tidak diganti)</span></label>
+                                                        <input type="password" name="password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="Password Baru">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block font-bold text-slate-600 mb-1">Role / Hak Akses</label>
+                                                        <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" required>
+                                                            <option value="kasir" <?= $usr['role'] === 'kasir' ? 'selected' : '' ?>>Kasir</option>
+                                                            <option value="owner" <?= $usr['role'] === 'owner' ? 'selected' : '' ?>>Owner / Admin</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex justify-end gap-2 pt-2">
+                                                        <button type="button" onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
+                                                        <button type="submit" name="edit_user" class="px-4 py-2 bg-impian-teal hover:bg-teal-700 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <!-- END MODAL EDIT USER -->
+
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-slate-400 py-6">Belum ada user.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
         </div>
-    </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
+
+    <!-- JS untuk Modal Popup -->
+    <script>
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+    </script>
+
 </body>
 </html>
