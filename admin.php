@@ -259,92 +259,98 @@ $total_owner = $count_user['total_owner'] ?? 0;
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- ================= KOLOM KIRI: FORM PRODUCT & USER ================= -->
-            <div class="lg:col-span-4 space-y-6">
+<!-- ================= KOLOM KIRI: FORM SWITCHER (TAMBAH PRODUK / TAMBAH USER) ================= -->
+            <div class="lg:col-span-4 space-y-4">
                 
-                <!-- 1. FORM TAMBAH PRODUK -->
-                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <span>➕</span> Tambah Produk Baru
-                        </h3>
-                    </div>
-                    <div class="p-5">
-                        <form action="" method="POST" class="space-y-3 text-xs">
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Kode Barang / Barcode</label>
-                                <input type="text" name="kode_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="cth: BRG004" required>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
-                                <input type="text" name="nama_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nama Produk" required>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Kategori</label>
-                                <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" required>
-                                    <option value="">-- Pilih Kategori --</option>
-                                    <?php 
-                                    $cat_res = mysqli_query($koneksi, $categories_query);
-                                    while ($c = mysqli_fetch_assoc($cat_res)): 
-                                    ?>
-                                        <option value="<?= $c['id'] ?>"><?= $c['nama_kategori'] ?></option>
-                                    <?php endwhile; ?>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block font-bold text-slate-600 mb-1">Harga Beli (HPP)</label>
-                                    <input type="number" name="harga_beli" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="0" required>
-                                </div>
-                                <div>
-                                    <label class="block font-bold text-slate-600 mb-1">Harga Jual</label>
-                                    <input type="number" name="harga_jual" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="0" required>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Stok Awal</label>
-                                <input type="number" name="stok" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="10" required>
-                            </div>
-                            <button type="submit" name="tambah_produk" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow text-xs uppercase tracking-wider mt-2">
-                                Simpan Produk
-                            </button>
-                        </form>
-                    </div>
+                <!-- NAVIGATION TABS FORM (Dua Tombol Berdampingan) -->
+                <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1.5 rounded-xl border border-slate-300">
+                    <button id="btnFormProduct" onclick="switchFormTab('product')" class="py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm">
+                        <span>➕</span> Tambah Barang
+                    </button>
+                    <button id="btnFormUser" onclick="switchFormTab('user')" class="py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                        <span>👤</span> Tambah User
+                    </button>
                 </div>
 
-                <!-- 2. FORM TAMBAH USER / KASIR -->
-                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
-                        <h3 class="font-bold text-impian-darkteal text-sm flex items-center gap-2">
+                <!-- FORM 1: TAMBAH PRODUK BARU -->
+                <div id="formProduct" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span>📦</span> Tambah Produk Baru
+                        </h3>
+                    </div>
+                    <form action="" method="POST" class="p-5 space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Kode Barang / Barcode</label>
+                            <input type="text" name="kode_barang" placeholder="Contoh: BRG001" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nama Barang</label>
+                            <input type="text" name="nama_barang" placeholder="Contoh: Kopi Hitam 200ml" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Kategori</label>
+                            <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                                <option value="">-- Pilih Kategori --</option>
+                                <?php 
+                                $cat_res = mysqli_query($koneksi, $categories_query);
+                                while ($c = mysqli_fetch_assoc($cat_res)): 
+                                ?>
+                                    <option value="<?= $c['id'] ?>"><?= $c['nama_kategori'] ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Harga Beli (HPP)</label>
+                                <input type="number" name="harga_beli" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Harga Jual</label>
+                                <input type="number" name="harga_jual" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Stok Awal</label>
+                            <input type="number" name="stok" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition" required>
+                        </div>
+                        <button type="submit" name="tambah_produk" class="w-full bg-impian-orange hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-2 text-xs">
+                            <span>💾</span> Simpan Produk
+                        </button>
+                    </form>
+                </div>
+
+                <!-- FORM 2: TAMBAH USER / KASIR BARU (Awalnya tersembunyi dengan class 'hidden') -->
+                <div id="formUser" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
                             <span>👤</span> Tambah User / Kasir Baru
                         </h3>
                     </div>
-                    <div class="p-5">
-                        <form action="" method="POST" class="space-y-3 text-xs">
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Nama Lengkap</label>
-                                <input type="text" name="nama" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="cth: Kasir 2" required>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Username</label>
-                                <input type="text" name="username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="cth: kasir2" required>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Password</label>
-                                <input type="password" name="password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="Masukkan Password" required>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Role / Hak Akses</label>
-                                <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" required>
-                                    <option value="kasir">Kasir</option>
-                                    <option value="owner">Owner / Admin</option>
-                                </select>
-                            </div>
-                            <button type="submit" name="tambah_user" class="w-full bg-impian-teal hover:bg-teal-700 text-white font-bold py-2.5 rounded-lg transition shadow text-xs uppercase tracking-wider mt-2">
-                                Tambah User Baru
-                            </button>
-                        </form>
-                    </div>
+                    <form action="" method="POST" class="p-5 space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                            <input type="text" name="nama" placeholder="Contoh: Ahmad Kasir" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-teal focus:border-transparent transition" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Username</label>
+                            <input type="text" name="username" placeholder="Contoh: ahmad123" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-teal focus:border-transparent transition" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Password</label>
+                            <input type="password" name="password" placeholder="Masukkan password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-teal focus:border-transparent transition" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Role / Hak Akses</label>
+                            <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-impian-teal focus:border-transparent transition" required>
+                                <option value="kasir">Kasir</option>
+                                <option value="owner">Owner / Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="tambah_user" class="w-full bg-impian-teal hover:bg-teal-700 text-white font-bold py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-2 text-xs">
+                            <span>👤</span> Simpan User Baru
+                        </button>
+                    </form>
                 </div>
 
             </div>
@@ -662,6 +668,30 @@ $total_owner = $count_user['total_owner'] ?? 0;
                     row.style.display = 'none';
                 }
             });
+        }
+
+        // FUNGSI SWITCH TAB FORM (Tambah Barang / Tambah User)
+        function switchFormTab(type) {
+            const formProduct = document.getElementById('formProduct');
+            const formUser = document.getElementById('formUser');
+            const btnProduct = document.getElementById('btnFormProduct');
+            const btnUser = document.getElementById('btnFormUser');
+
+            if (type === 'product') {
+                formProduct.classList.remove('hidden');
+                formUser.classList.add('hidden');
+                
+                // Styling Tombol Aktif / Nonaktif
+                btnProduct.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm";
+                btnUser.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+            } else {
+                formUser.classList.remove('hidden');
+                formProduct.classList.add('hidden');
+
+                // Styling Tombol Aktif / Nonaktif
+                btnUser.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm";
+                btnProduct.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+            }
         }
     </script>
 
