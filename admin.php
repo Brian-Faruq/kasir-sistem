@@ -148,7 +148,23 @@ $sql_products .= " ORDER BY p.stok ASC";
 $categories_query = "SELECT * FROM categories ORDER BY nama_kategori ASC";
 $products = mysqli_query($koneksi, $sql_products);
 
+// Simpan data produk ke array untuk diproses pada tabel & modal terpisah
+$products_list = [];
+if (mysqli_num_rows($products) > 0) {
+    while ($p = mysqli_fetch_assoc($products)) {
+        $products_list[] = $p;
+    }
+}
+
 $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
+
+// Simpan data user ke array untuk diproses pada tabel & modal terpisah
+$users_list = [];
+if (mysqli_num_rows($users_query) > 0) {
+    while ($u = mysqli_fetch_assoc($users_query)) {
+        $users_list[] = $u;
+    }
+}
 
 $q_count_user = mysqli_query($koneksi, "SELECT 
     COUNT(*) as total,
@@ -259,10 +275,10 @@ $total_owner = $count_user['total_owner'] ?? 0;
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-<!-- ================= KOLOM KIRI: FORM SWITCHER (TAMBAH PRODUK / TAMBAH USER) ================= -->
+            <!-- ================= KOLOM KIRI: FORM SWITCHER ================= -->
             <div class="lg:col-span-4 space-y-4">
                 
-                <!-- NAVIGATION TABS FORM (Dua Tombol Berdampingan) -->
+                <!-- NAVIGATION TABS FORM -->
                 <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1.5 rounded-xl border border-slate-300">
                     <button id="btnFormProduct" onclick="switchFormTab('product')" class="py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm">
                         <span>➕</span> Tambah Barang
@@ -320,7 +336,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
                     </form>
                 </div>
 
-                <!-- FORM 2: TAMBAH USER / KASIR BARU (Awalnya tersembunyi dengan class 'hidden') -->
+                <!-- FORM 2: TAMBAH USER / KASIR BARU -->
                 <div id="formUser" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -355,10 +371,10 @@ $total_owner = $count_user['total_owner'] ?? 0;
 
             </div>
 
-<!-- ================= KOLOM KANAN: TABEL SWITCHER (PRODUK / USER) ================= -->
+            <!-- ================= KOLOM KANAN: TABEL SWITCHER ================= -->
             <div class="lg:col-span-8 space-y-4">
                 
-                <!-- NAVIGATION TABS (Dua Tombol Berdampingan) -->
+                <!-- NAVIGATION TABS -->
                 <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1.5 rounded-xl border border-slate-300">
                     <button id="btnTabProduct" onclick="switchTab('product')" class="py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm">
                         <span>📦</span> Stok Barang
@@ -381,9 +397,9 @@ $total_owner = $count_user['total_owner'] ?? 0;
                         </div>
                     </div>
                     
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
                         <table class="w-full text-left text-xs text-slate-600" id="tableProduct">
-                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
+                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3">Kode</th>
                                     <th class="px-4 py-3">Nama Barang</th>
@@ -394,8 +410,8 @@ $total_owner = $count_user['total_owner'] ?? 0;
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                <?php if (mysqli_num_rows($products) > 0): ?>
-                                    <?php while ($row = mysqli_fetch_assoc($products)): ?>
+                                <?php if (!empty($products_list)): ?>
+                                    <?php foreach ($products_list as $row): ?>
                                         <tr class="product-row hover:bg-slate-50 transition">
                                             <td class="px-4 py-3 font-mono font-medium text-slate-500 product-code"><?= $row['kode_barang'] ?></td>
                                             <td class="px-4 py-3 font-semibold text-slate-800 product-name"><?= $row['nama_barang'] ?></td>
@@ -413,61 +429,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
                                                 <a href="admin.php?hapus=<?= $row['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 rounded transition text-[11px] inline-block" onclick="return confirm('Yakin ingin menghapus barang ini?')">Hapus</a>
                                             </td>
                                         </tr>
-
-                                        <!-- MODAL EDIT PRODUK -->
-                                        <div id="modalEditProduct<?= $row['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-                                            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
-                                                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
-                                                    <h3 class="font-bold text-sm">Edit Produk</h3>
-                                                    <button onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
-                                                </div>
-                                                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
-                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Kode Barang / Barcode</label>
-                                                        <input type="text" name="kode_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['kode_barang'] ?>" required>
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
-                                                        <input type="text" name="nama_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['nama_barang'] ?>" required>
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Kategori</label>
-                                                        <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" required>
-                                                            <?php 
-                                                            $cat_res_modal = mysqli_query($koneksi, $categories_query);
-                                                            while ($cm = mysqli_fetch_assoc($cat_res_modal)): 
-                                                            ?>
-                                                                <option value="<?= $cm['id'] ?>" <?= $cm['id'] == $row['category_id'] ? 'selected' : '' ?>>
-                                                                    <?= $cm['nama_kategori'] ?>
-                                                                </option>
-                                                            <?php endwhile; ?>
-                                                        </select>
-                                                    </div>
-                                                    <div class="grid grid-cols-2 gap-2">
-                                                        <div>
-                                                            <label class="block font-bold text-slate-600 mb-1">Harga Beli (HPP)</label>
-                                                            <input type="number" name="harga_beli" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_beli'] ?>" required>
-                                                        </div>
-                                                        <div>
-                                                            <label class="block font-bold text-slate-600 mb-1">Harga Jual</label>
-                                                            <input type="number" name="harga_jual" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_jual'] ?>" required>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Stok</label>
-                                                        <input type="number" name="stok" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['stok'] ?>" required>
-                                                    </div>
-                                                    <div class="flex justify-end gap-2 pt-2">
-                                                        <button type="button" onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
-                                                        <button type="submit" name="edit_produk" class="px-4 py-2 bg-impian-orange hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <!-- END MODAL EDIT PRODUK -->
-
-                                    <?php endwhile; ?>
+                                    <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
                                         <td colspan="6" class="text-center text-slate-400 py-6">Belum ada data produk.</td>
@@ -478,7 +440,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
                     </div>
                 </div>
 
-                <!-- TAB 2: TABEL KELOLA USER / KASIR (Awalnya tersembunyi dengan class 'hidden') -->
+                <!-- TAB 2: TABEL KELOLA USER / KASIR -->
                 <div id="tabUser" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -506,9 +468,9 @@ $total_owner = $count_user['total_owner'] ?? 0;
                         </div>
                     </div>
                     
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
                         <table class="w-full text-left text-xs text-slate-600" id="tableUser">
-                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
+                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Nama Lengkap</th>
@@ -518,8 +480,8 @@ $total_owner = $count_user['total_owner'] ?? 0;
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                <?php if (mysqli_num_rows($users_query) > 0): ?>
-                                    <?php while ($usr = mysqli_fetch_assoc($users_query)): ?>
+                                <?php if (!empty($users_list)): ?>
+                                    <?php foreach ($users_list as $usr): ?>
                                         <tr class="user-row hover:bg-slate-50 transition">
                                             <td class="px-4 py-3 font-mono text-slate-500">#<?= $usr['id'] ?></td>
                                             <td class="px-4 py-3 font-bold text-slate-800 user-fullname"><?= $usr['nama'] ?></td>
@@ -540,45 +502,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
-
-                                        <!-- MODAL EDIT USER -->
-                                        <div id="modalEditUser<?= $usr['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-                                            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
-                                                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
-                                                    <h3 class="font-bold text-sm">Edit User / Kasir</h3>
-                                                    <button onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
-                                                </div>
-                                                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
-                                                    <input type="hidden" name="id_user" value="<?= $usr['id'] ?>">
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Nama Lengkap</label>
-                                                        <input type="text" name="nama" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['nama'] ?>" required>
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Username</label>
-                                                        <input type="text" name="username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['username'] ?>" required>
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Password Baru <span class="text-slate-400 font-normal">(Kosongkan jika tidak diganti)</span></label>
-                                                        <input type="password" name="password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="Password Baru">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block font-bold text-slate-600 mb-1">Role / Hak Akses</label>
-                                                        <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" required>
-                                                            <option value="kasir" <?= $usr['role'] === 'kasir' ? 'selected' : '' ?>>Kasir</option>
-                                                            <option value="owner" <?= $usr['role'] === 'owner' ? 'selected' : '' ?>>Owner / Admin</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="flex justify-end gap-2 pt-2">
-                                                        <button type="button" onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
-                                                        <button type="submit" name="edit_user" class="px-4 py-2 bg-impian-teal hover:bg-teal-700 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <!-- END MODAL EDIT USER -->
-
-                                    <?php endwhile; ?>
+                                    <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
                                         <td colspan="5" class="text-center text-slate-400 py-6">Belum ada user.</td>
@@ -594,9 +518,102 @@ $total_owner = $count_user['total_owner'] ?? 0;
 
     </div>
 
-<!-- JS untuk Modal Popup, Live Filter & Tab Switcher -->
+    <!-- ================= SECTION MODAL (Ditaruh luar tabel agar penataan DOM & Backdrop Z-Index Normal) ================= -->
+
+    <!-- MODALS EDIT PRODUK -->
+    <?php foreach ($products_list as $row): ?>
+        <div id="modalEditProduct<?= $row['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-sm">Edit Produk</h3>
+                    <button onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
+                </div>
+                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
+                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Kode Barang / Barcode</label>
+                        <input type="text" name="kode_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['kode_barang'] ?>" required>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
+                        <input type="text" name="nama_barang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['nama_barang'] ?>" required>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Kategori</label>
+                        <select name="category_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" required>
+                            <?php 
+                            $cat_res_modal = mysqli_query($koneksi, $categories_query);
+                            while ($cm = mysqli_fetch_assoc($cat_res_modal)): 
+                            ?>
+                                <option value="<?= $cm['id'] ?>" <?= $cm['id'] == $row['category_id'] ? 'selected' : '' ?>>
+                                    <?= $cm['nama_kategori'] ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Harga Beli (HPP)</label>
+                            <input type="number" name="harga_beli" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_beli'] ?>" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Harga Jual</label>
+                            <input type="number" name="harga_jual" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['harga_jual'] ?>" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Stok</label>
+                        <input type="number" name="stok" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-orange" value="<?= $row['stok'] ?>" required>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeModal('modalEditProduct<?= $row['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
+                        <button type="submit" name="edit_produk" class="px-4 py-2 bg-impian-orange hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endforeach; ?>
+
+    <!-- MODALS EDIT USER -->
+    <?php foreach ($users_list as $usr): ?>
+        <div id="modalEditUser<?= $usr['id'] ?>" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+                <div class="bg-impian-navy px-5 py-3.5 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-sm">Edit User / Kasir</h3>
+                    <button onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="text-white/70 hover:text-white text-lg font-bold">&times;</button>
+                </div>
+                <form action="" method="POST" class="p-5 space-y-3 text-xs text-left">
+                    <input type="hidden" name="id_user" value="<?= $usr['id'] ?>">
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Nama Lengkap</label>
+                        <input type="text" name="nama" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['nama'] ?>" required>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Username</label>
+                        <input type="text" name="username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" value="<?= $usr['username'] ?>" required>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Password Baru <span class="text-slate-400 font-normal">(Kosongkan jika tidak diganti)</span></label>
+                        <input type="password" name="password" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" placeholder="Password Baru">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Role / Hak Akses</label>
+                        <select name="role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-impian-teal" required>
+                            <option value="kasir" <?= $usr['role'] === 'kasir' ? 'selected' : '' ?>>Kasir</option>
+                            <option value="owner" <?= $usr['role'] === 'owner' ? 'selected' : '' ?>>Owner / Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeModal('modalEditUser<?= $usr['id'] ?>')" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">Batal</button>
+                        <button type="submit" name="edit_user" class="px-4 py-2 bg-impian-teal hover:bg-teal-700 text-white font-bold rounded-lg transition shadow">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endforeach; ?>
+
+    <!-- JS untuk Modal Popup, Live Filter & Tab Switcher -->
     <script>
-        // FUNGSI SWITCH TAB (Barang / User)
         function switchTab(type) {
             const tabProduct = document.getElementById('tabProduct');
             const tabUser = document.getElementById('tabUser');
@@ -607,14 +624,12 @@ $total_owner = $count_user['total_owner'] ?? 0;
                 tabProduct.classList.remove('hidden');
                 tabUser.classList.add('hidden');
                 
-                // Styling Tombol Aktif / Nonaktif
                 btnProduct.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm";
                 btnUser.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
             } else {
                 tabUser.classList.remove('hidden');
                 tabProduct.classList.add('hidden');
 
-                // Styling Tombol Aktif / Nonaktif
                 btnUser.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm";
                 btnProduct.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
             }
@@ -636,7 +651,6 @@ $total_owner = $count_user['total_owner'] ?? 0;
             }
         }
 
-        // Live Filter Produk
         function filterProducts() {
             const input = document.getElementById('searchProduct').value.toLowerCase();
             const rows = document.querySelectorAll('.product-row');
@@ -653,7 +667,6 @@ $total_owner = $count_user['total_owner'] ?? 0;
             });
         }
 
-        // Live Filter User
         function filterUsers() {
             const input = document.getElementById('searchUser').value.toLowerCase();
             const rows = document.querySelectorAll('.user-row');
@@ -670,7 +683,6 @@ $total_owner = $count_user['total_owner'] ?? 0;
             });
         }
 
-        // FUNGSI SWITCH TAB FORM (Tambah Barang / Tambah User)
         function switchFormTab(type) {
             const formProduct = document.getElementById('formProduct');
             const formUser = document.getElementById('formUser');
@@ -681,14 +693,12 @@ $total_owner = $count_user['total_owner'] ?? 0;
                 formProduct.classList.remove('hidden');
                 formUser.classList.add('hidden');
                 
-                // Styling Tombol Aktif / Nonaktif
                 btnProduct.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm";
                 btnUser.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
             } else {
                 formUser.classList.remove('hidden');
                 formProduct.classList.add('hidden');
 
-                // Styling Tombol Aktif / Nonaktif
                 btnUser.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-impian-navy shadow-sm";
                 btnProduct.className = "py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
             }
