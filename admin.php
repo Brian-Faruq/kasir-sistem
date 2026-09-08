@@ -149,6 +149,17 @@ $categories_query = "SELECT * FROM categories ORDER BY nama_kategori ASC";
 $products = mysqli_query($koneksi, $sql_products);
 
 $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
+
+$q_count_user = mysqli_query($koneksi, "SELECT 
+    COUNT(*) as total,
+    SUM(CASE WHEN role = 'kasir' THEN 1 ELSE 0 END) as total_kasir,
+    SUM(CASE WHEN role = 'owner' THEN 1 ELSE 0 END) as total_owner
+FROM users");
+$count_user = mysqli_fetch_assoc($q_count_user);
+
+$total_semua = $count_user['total'] ?? 0;
+$total_kasir = $count_user['total_kasir'] ?? 0;
+$total_owner = $count_user['total_owner'] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -451,12 +462,28 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                     </div>
                 </div>
 
-<!-- 2. TABEL KELOLA USER / KASIR -->
+                <!-- 2. TABEL KELOLA USER / KASIR -->
                 <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
-                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <span>👥</span> Daftar Pengguna / Kasir
-                        </h3>
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <span>👥</span> Daftar Pengguna / Kasir
+                            </h3>
+                            
+                            <!-- BADGE TOTAL USER -->
+                            <div class="flex items-center gap-1.5 text-[11px] font-semibold">
+                                <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full border border-slate-300">
+                                    Semua: <?= $total_semua ?>
+                                </span>
+                                <span class="bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full border border-teal-200">
+                                    Kasir: <?= $total_kasir ?>
+                                </span>
+                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                                    Owner: <?= $total_owner ?>
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- SEARCH BAR USER -->
                         <div class="relative w-full sm:w-64">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs">🔍</span>
