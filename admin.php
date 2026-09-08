@@ -451,16 +451,21 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                     </div>
                 </div>
 
-                <!-- 2. TABEL KELOLA USER / KASIR -->
+<!-- 2. TABEL KELOLA USER / KASIR -->
                 <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
                             <span>👥</span> Daftar Pengguna / Kasir
                         </h3>
+                        <!-- SEARCH BAR USER -->
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs">🔍</span>
+                            <input type="text" id="searchUser" onkeyup="filterUsers()" placeholder="Cari nama / username..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-impian-teal focus:border-transparent transition shadow-sm">
+                        </div>
                     </div>
                     
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                        <table class="w-full text-left text-xs text-slate-600" id="tableUser">
                             <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
@@ -473,10 +478,10 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                             <tbody class="divide-y divide-slate-100">
                                 <?php if (mysqli_num_rows($users_query) > 0): ?>
                                     <?php while ($usr = mysqli_fetch_assoc($users_query)): ?>
-                                        <tr class="hover:bg-slate-50 transition">
+                                        <tr class="user-row hover:bg-slate-50 transition">
                                             <td class="px-4 py-3 font-mono text-slate-500">#<?= $usr['id'] ?></td>
-                                            <td class="px-4 py-3 font-bold text-slate-800"><?= $usr['nama'] ?></td>
-                                            <td class="px-4 py-3"><?= $usr['username'] ?></td>
+                                            <td class="px-4 py-3 font-bold text-slate-800 user-fullname"><?= $usr['nama'] ?></td>
+                                            <td class="px-4 py-3 user-username"><?= $usr['username'] ?></td>
                                             <td class="px-4 py-3">
                                                 <?php if ($usr['role'] === 'owner'): ?>
                                                     <span class="inline-block bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-blue-200">Owner</span>
@@ -548,7 +553,7 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 
     </div>
 
-    <!-- JS untuk Modal Popup -->
+    <!-- JS untuk Modal Popup & Live Filter -->
     <script>
         function openModal(id) {
             const modal = document.getElementById(id);
@@ -566,6 +571,7 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
             }
         }
 
+        // Live Filter Produk (Kode & Nama)
         function filterProducts() {
             const input = document.getElementById('searchProduct').value.toLowerCase();
             const rows = document.querySelectorAll('.product-row');
@@ -575,6 +581,23 @@ $users_query = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                 const name = row.querySelector('.product-name').textContent.toLowerCase();
 
                 if (code.includes(input) || name.includes(input)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Live Filter User (Nama & Username)
+        function filterUsers() {
+            const input = document.getElementById('searchUser').value.toLowerCase();
+            const rows = document.querySelectorAll('.user-row');
+
+            rows.forEach(row => {
+                const fullname = row.querySelector('.user-fullname').textContent.toLowerCase();
+                const username = row.querySelector('.user-username').textContent.toLowerCase();
+
+                if (fullname.includes(input) || username.includes(input)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
