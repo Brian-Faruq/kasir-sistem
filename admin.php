@@ -349,16 +349,26 @@ $total_owner = $count_user['total_owner'] ?? 0;
 
             </div>
 
-            <!-- ================= KOLOM KANAN: TABEL PRODUK & USER ================= -->
-            <div class="lg:col-span-8 space-y-6">
+<!-- ================= KOLOM KANAN: TABEL SWITCHER (PRODUK / USER) ================= -->
+            <div class="lg:col-span-8 space-y-4">
                 
-                <!-- 1. TABEL INVENTARIS PRODUK -->
-                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                <!-- NAVIGATION TABS (Dua Tombol Berdampingan) -->
+                <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1.5 rounded-xl border border-slate-300">
+                    <button id="btnTabProduct" onclick="switchTab('product')" class="py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm">
+                        <span>📦</span> Stok Barang
+                    </button>
+                    <button id="btnTabUser" onclick="switchTab('user')" class="py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900">
+                        <span>👥</span> Daftar User / Kasir
+                    </button>
+                </div>
+
+                <!-- TAB 1: TABEL INVENTARIS PRODUK -->
+                <div id="tabProduct" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
                             <span>📦</span> Daftar Stok Produk
                         </h3>
-                        <!-- SEARCH BAR (Menggantikan Tombol Filter) -->
+                        <!-- SEARCH BAR PRODUK -->
                         <div class="relative w-full sm:w-64">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs">🔍</span>
                             <input type="text" id="searchProduct" onkeyup="filterProducts()" placeholder="Cari kode / nama barang..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-impian-orange focus:border-transparent transition shadow-sm">
@@ -462,14 +472,13 @@ $total_owner = $count_user['total_owner'] ?? 0;
                     </div>
                 </div>
 
-                <!-- 2. TABEL KELOLA USER / KASIR -->
-                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                <!-- TAB 2: TABEL KELOLA USER / KASIR (Awalnya tersembunyi dengan class 'hidden') -->
+                <div id="tabUser" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden hidden">
                     <div class="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
                                 <span>👥</span> Daftar Pengguna / Kasir
                             </h3>
-                            
                             <!-- BADGE TOTAL USER -->
                             <div class="flex items-center gap-1.5 text-[11px] font-semibold">
                                 <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full border border-slate-300">
@@ -575,13 +584,36 @@ $total_owner = $count_user['total_owner'] ?? 0;
                 </div>
 
             </div>
-
         </div>
 
     </div>
 
-    <!-- JS untuk Modal Popup & Live Filter -->
+<!-- JS untuk Modal Popup, Live Filter & Tab Switcher -->
     <script>
+        // FUNGSI SWITCH TAB (Barang / User)
+        function switchTab(type) {
+            const tabProduct = document.getElementById('tabProduct');
+            const tabUser = document.getElementById('tabUser');
+            const btnProduct = document.getElementById('btnTabProduct');
+            const btnUser = document.getElementById('btnTabUser');
+
+            if (type === 'product') {
+                tabProduct.classList.remove('hidden');
+                tabUser.classList.add('hidden');
+                
+                // Styling Tombol Aktif / Nonaktif
+                btnProduct.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm";
+                btnUser.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
+            } else {
+                tabUser.classList.remove('hidden');
+                tabProduct.classList.add('hidden');
+
+                // Styling Tombol Aktif / Nonaktif
+                btnUser.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 bg-white text-impian-navy shadow-sm";
+                btnProduct.className = "py-2 px-4 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
+            }
+        }
+
         function openModal(id) {
             const modal = document.getElementById(id);
             if (modal) {
@@ -598,7 +630,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
             }
         }
 
-        // Live Filter Produk (Kode & Nama)
+        // Live Filter Produk
         function filterProducts() {
             const input = document.getElementById('searchProduct').value.toLowerCase();
             const rows = document.querySelectorAll('.product-row');
@@ -615,7 +647,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
             });
         }
 
-        // Live Filter User (Nama & Username)
+        // Live Filter User
         function filterUsers() {
             const input = document.getElementById('searchUser').value.toLowerCase();
             const rows = document.querySelectorAll('.user-row');
