@@ -397,16 +397,16 @@ $total_owner = $count_user['total_owner'] ?? 0;
                         </div>
                     </div>
                     
-                    <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-                        <table class="w-full text-left text-xs text-slate-600" id="tableProduct">
-                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                    <div class="overflow-x-auto max-h-[415px] overflow-y-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-left text-xs text-slate-600 relative border-collapse">
+                            <thead class="bg-slate-100 uppercase font-semibold text-slate-700 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="px-4 py-3">Kode</th>
-                                    <th class="px-4 py-3">Nama Barang</th>
-                                    <th class="px-4 py-3">Harga Beli</th>
-                                    <th class="px-4 py-3">Harga Jual</th>
-                                    <th class="px-4 py-3">Stok</th>
-                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                    <th class="px-4 py-3 bg-slate-100">Kode</th>
+                                    <th class="px-4 py-3 bg-slate-100">Nama Barang</th>
+                                    <th class="px-4 py-3 bg-slate-100">Harga Beli</th>
+                                    <th class="px-4 py-3 bg-slate-100">Harga Jual</th>
+                                    <th class="px-4 py-3 bg-slate-100">Stok</th>
+                                    <th class="px-4 py-3 bg-slate-100 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
