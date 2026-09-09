@@ -43,112 +43,145 @@ $list_transaksi = mysqli_query($koneksi, $query_detail_trans);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Keuangan - POS UMKM</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Laporan Keuangan - POS Sekolah Impian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="bg-slate-100 font-sans antialiased text-slate-800">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="admin.php">POS UMKM - Admin Panel</a>
-        <div class="d-flex text-white align-items-center">
-            <a href="admin.php" class="btn btn-outline-light btn-sm me-2">Dashboard Produk</a>
-            <a href="kasir.php" class="btn btn-outline-info btn-sm me-2">Ke Kasir</a>
-            <a href="logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
+    <!-- NAVBAR HEADER -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-orange-500 p-2 rounded-lg text-white font-bold">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-wide">POS SEKOLAH IMPIAN <span class="text-xs bg-orange-500 text-white px-2 py-0.5 rounded uppercase font-semibold ml-1">Laporan</span></h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="admin.php" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium px-4 py-2 rounded-lg border border-slate-700 transition">
+                    <i class="fa-solid fa-box mr-1.5"></i> Dashboard Produk
+                </a>
+                <a href="logout.php" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+                    Logout
+                </a>
+            </div>
         </div>
-    </div>
-</nav>
+    </header>
 
-<div class="container-fluid px-4">
-    <!-- FILTER TANGGAL -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="GET" action="" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold small">Dari Tanggal</label>
-                    <input type="date" name="tgl_mulai" class="form-control" value="<?= $tgl_mulai ?>">
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- FILTER TANGGAL CARD -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <div class="md:col-span-4">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Dari Tanggal</label>
+                    <input type="date" name="tgl_mulai" value="<?= $tgl_mulai ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold small">Sampai Tanggal</label>
-                    <input type="date" name="tgl_selesai" class="form-control" value="<?= $tgl_selesai ?>">
+                <div class="md:col-span-4">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Sampai Tanggal</label>
+                    <input type="date" name="tgl_selesai" value="<?= $tgl_selesai ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary fw-bold w-100">Filter Laporan</button>
+                <div class="md:col-span-4">
+                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-filter"></i>
+                        <span>Filter Laporan</span>
+                    </button>
                 </div>
             </form>
         </div>
-    </div>
 
-    <!-- METRIK KEUANGAN (LABA/RUGI) -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Total Omzet</h6>
-                    <h4 class="fw-bold mb-0">Rp <?= number_format($omzet, 0, ',', '.') ?></h4>
-                    <small><?= $total_transaksi ?> Transaksi</small>
+        <!-- STATS CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Total Omzet -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 bg-blue-50 text-blue-200 rounded-full p-8">
+                    <i class="fa-solid fa-wallet text-6xl"></i>
                 </div>
+                <p class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Total Omzet</p>
+                <h3 class="text-3xl font-extrabold text-slate-900 mb-1">Rp <?= number_format($omzet, 0, ',', '.') ?></h3>
+                <p class="text-xs text-slate-500 font-medium"><i class="fa-solid fa-receipt mr-1"></i> <?= $total_transaksi ?> Transaksi</p>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-secondary text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Total Modal (HPP)</h6>
-                    <h4 class="fw-bold mb-0">Rp <?= number_format($hpp, 0, ',', '.') ?></h4>
-                    <small>Modal Barang Terjual</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card <?= $laba_bersih >= 0 ? 'bg-success' : 'bg-danger' ?> text-white shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">Laba Bersih</h6>
-                    <h4 class="fw-bold mb-0">Rp <?= number_format($laba_bersih, 0, ',', '.') ?></h4>
-                    <small>Keuntungan Bersih Toko</small>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- RIWAYAT TRANSAKSI -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold">Riwayat Transaksi Penjualan</div>
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>No Nota</th>
-                        <th>Tanggal & Waktu</th>
-                        <th>Kasir</th>
-                        <th>Metode Bayar</th>
-                        <th>Total Bayar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (mysqli_num_rows($list_transaksi) > 0): ?>
-                        <?php while ($row = mysqli_fetch_assoc($list_transaksi)): ?>
-                            <tr>
-                                <td>
-                                    <a href="cetak_nota.php?id=<?= $row['id'] ?>" target="_blank" class="text-decoration-none fw-bold" title="Klik untuk lihat / cetak nota">
-                                        <code><?= $row['no_nota'] ?></code>
-                                    </a>
-                                </td>
-                                <td><?= date('d-m-Y H:i', strtotime($row['created_at'])) ?></td>
-                                <td><?= $row['kasir'] ?></td>
-                                <td><span class="badge bg-info text-dark"><?= strtoupper($row['metode_bayar']) ?></span></td>
-                                <td class="fw-bold">Rp <?= number_format($row['total_harga'], 0, ',', '.') ?></td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php else: ?>
+            <!-- Total HPP / Modal -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 bg-slate-100 text-slate-200 rounded-full p-8">
+                    <i class="fa-solid fa-boxes-packing text-6xl"></i>
+                </div>
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Modal (HPP)</p>
+                <h3 class="text-3xl font-extrabold text-slate-700 mb-1">Rp <?= number_format($hpp, 0, ',', '.') ?></h3>
+                <p class="text-xs text-slate-500 font-medium">Modal Barang Terjual</p>
+            </div>
+
+            <!-- Laba Bersih -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 <?= $laba_bersih >= 0 ? 'bg-emerald-50 text-emerald-200' : 'bg-rose-50 text-rose-200' ?> rounded-full p-8">
+                    <i class="fa-solid <?= $laba_bersih >= 0 ? 'fa-sack-dollar' : 'fa-hand-holding-dollar' ?> text-6xl"></i>
+                </div>
+                <p class="text-xs font-bold <?= $laba_bersih >= 0 ? 'text-emerald-600' : 'text-rose-600' ?> uppercase tracking-wider mb-1">Laba Bersih</p>
+                <h3 class="text-3xl font-extrabold <?= $laba_bersih >= 0 ? 'text-emerald-600' : 'text-rose-600' ?> mb-1">Rp <?= number_format($laba_bersih, 0, ',', '.') ?></h3>
+                <p class="text-xs <?= $laba_bersih >= 0 ? 'text-emerald-600' : 'text-rose-600' ?> font-medium">
+                    <i class="fa-solid <?= $laba_bersih >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' ?> mr-1"></i> 
+                    <?= $laba_bersih >= 0 ? 'Keuntungan Bersih Toko' : 'Kerugian Toko' ?>
+                </p>
+            </div>
+        </div>
+
+        <!-- RIWAYAT TRANSAKSI TABLE -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-orange-500"></i>
+                    Riwayat Transaksi Penjualan
+                </h2>
+            </div>
+            
+            <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
+                <table class="w-full text-left text-xs text-slate-600 relative border-collapse">
+                    <thead class="bg-slate-100 uppercase font-semibold text-slate-700 sticky top-0 z-10 shadow-sm">
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-3">Tidak ada transaksi pada periode ini</td>
+                            <th class="px-5 py-3.5 bg-slate-100">No Nota</th>
+                            <th class="px-5 py-3.5 bg-slate-100">Tanggal & Waktu</th>
+                            <th class="px-5 py-3.5 bg-slate-100">Kasir</th>
+                            <th class="px-5 py-3.5 bg-slate-100 text-center">Metode Bayar</th>
+                            <th class="px-5 py-3.5 bg-slate-100 text-right">Total Bayar</th>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium">
+                        <?php if (mysqli_num_rows($list_transaksi) > 0): ?>
+                            <?php while ($row = mysqli_fetch_assoc($list_transaksi)): ?>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-4 font-bold text-orange-600 hover:underline">
+                                        <a href="cetak_nota.php?id=<?= $row['id'] ?>" target="_blank" title="Klik untuk lihat / cetak nota">
+                                            <?= $row['no_nota'] ?>
+                                        </a>
+                                    </td>
+                                    <td class="px-5 py-4 text-slate-500"><?= date('d-m-Y H:i', strtotime($row['created_at'])) ?></td>
+                                    <td class="px-5 py-4 text-slate-800"><?= $row['kasir'] ?></td>
+                                    <td class="px-5 py-4 text-center">
+                                        <span class="bg-teal-100 text-teal-700 font-bold px-3 py-1 rounded-full text-[10px] tracking-wider uppercase">
+                                            <?= strtoupper($row['metode_bayar']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 text-sm">
+                                        Rp <?= number_format($row['total_harga'], 0, ',', '.') ?>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" class="px-5 py-8 text-center text-slate-400 font-normal">
+                                    <i class="fa-regular fa-folder-open text-3xl mb-2 block"></i>
+                                    Tidak ada transaksi pada periode ini
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-</div>
 
+    </main>
 </body>
 </html>
