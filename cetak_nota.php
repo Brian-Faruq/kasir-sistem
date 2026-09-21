@@ -33,7 +33,7 @@ $res_detail = mysqli_query($koneksi, $query_detail);
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Struk Pembayaran - <?= $trans['no_nota'] ?></title>
+    <title>Struk Pembayaran<?= $trans['no_nota'] ?></title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;

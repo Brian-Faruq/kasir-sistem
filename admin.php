@@ -182,7 +182,7 @@ $total_owner = $count_user['total_owner'] ?? 0;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - POS SEKOLAH IMPIAN</title>
+    <title>Dashboard Admin</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
