@@ -105,6 +105,13 @@ $q_total_prod = mysqli_query($koneksi, "SELECT COUNT(id) as total FROM products 
 $total_prod   = mysqli_fetch_assoc($q_total_prod)['total'] ?? 0;
 
 $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 ORDER BY nama_barang ASC");
+
+// 5. AMBIL DATA RIWAYAT TRANSAKSI KHUSUS KASIR YANG LOGIN
+$logged_user_id = $_SESSION['user_id'];
+$q_riwayat_kasir = "SELECT * FROM transactions 
+                    WHERE user_id = $logged_user_id 
+                    ORDER BY id DESC";
+$res_riwayat_kasir = mysqli_query($koneksi, $q_riwayat_kasir);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -133,8 +140,9 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
         }
     </script>
     
-    <!-- Select2 & HTML5 QRCode -->
+    <!-- Select2 & FontAwesome & HTML5 QRCode -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -168,16 +176,27 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 <span class="text-white/80 text-[10px] tracking-wider uppercase font-semibold">System Kasir Modern</span>
             </div>
         </div>
+        
         <div class="flex items-center space-x-3 text-white text-xs">
             <div class="hidden sm:block text-right mr-2">
                 <span class="block text-white/70 text-[10px]">Petugas Kasir</span>
                 <strong class="font-bold text-sm"><?= $_SESSION['nama'] ?></strong> (<?= ucfirst($_SESSION['role']) ?>)
             </div>
+
+            <!-- TAB TOMBOL: POS KASIR vs RIWAYAT TRANSAKSI -->
+            <button type="button" onclick="switchTab('pos')" id="btn-tab-pos" class="bg-white text-impian-orange px-3 py-1.5 rounded-lg font-bold transition shadow flex items-center gap-1.5 text-xs">
+                <i class="fa-solid fa-cash-register"></i> <span class="hidden sm:inline">Mesin Kasir</span>
+            </button>
+            <button type="button" onclick="switchTab('riwayat')" id="btn-tab-riwayat" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5 text-xs">
+                <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden sm:inline">Riwayat Transaksi</span>
+            </button>
+
             <?php if ($_SESSION['role'] === 'owner'): ?>
                 <a href="admin.php" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1">
                     📊 <span class="hidden sm:inline">Dashboard</span> Owner
                 </a>
             <?php endif; ?>
+            
             <a href="logout.php" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-semibold transition shadow flex items-center gap-1">
                 🚪 Logout
             </a>
@@ -187,7 +206,8 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative">
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <!-- ==================== CONTAINER TAB 1: MESIN KASIR ==================== -->
+    <div id="tab-pos-content" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
         <!-- KOLOM KIRI: KERANJANG BELANJA (z-index 30) -->
         <div class="lg:col-span-7 space-y-5 relative z-30">
@@ -259,7 +279,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
             
             <!-- CARD 1: PILIH BARANG -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
-                <!-- HEADER: Title di kiri, Badge Ready di Ujung Kanan (Flex End) -->
                 <div class="bg-impian-navy px-5 py-3.5 flex justify-between items-center text-white">
                     <h2 class="font-bold text-sm tracking-wide">Pilih Produk</h2>
                     <span class="bg-white/20 text-white/90 text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/10">
@@ -268,7 +287,6 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 </div>
                 
                 <div class="p-4">
-                    <!-- TOMBOL SCAN BARCODE (Pindah ke Atas Input) -->
                     <button type="button" onclick="openScanner()" class="w-full mb-3 bg-impian-orange hover:bg-orange-600 text-white text-xs px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition shadow">
                         📷 Scan Barcode Lewat Device
                     </button>
@@ -301,14 +319,12 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                 </div>
             </div>
 
-            <!-- CARD 2: PEMBAYARAN (LAYOUT PRESISI GAMBAR 2) -->
+            <!-- CARD 2: PEMBAYARAN -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 p-4">
                 <form action="" method="POST" onsubmit="return verifikasiPembayaran()">
                     <input type="hidden" id="grand_total" value="<?= $grand_total ?>">
                     
                     <div class="grid grid-cols-12 gap-4">
-                        
-                        <!-- SISI KIRI: TOTAL BELANJA & METODE PEMBAYARAN -->
                         <div class="col-span-5 flex flex-col justify-between">
                             <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 text-left">
                                 <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">TOTAL BELANJA</span>
@@ -326,10 +342,7 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                             </div>
                         </div>
 
-                        <!-- SISI KANAN: NOMINAL CEPAT, INPUT UANG & BUTTON TRANSAKSI -->
                         <div class="col-span-7 flex flex-col justify-between space-y-2.5">
-                            
-                            <!-- TOMBOL NOMINAL CEPAT -->
                             <div id="quick_cash_container" class="grid grid-cols-5 gap-1">
                                 <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(<?= $grand_total ?>)">Pas</button>
                                 <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(10000)">10k</button>
@@ -338,24 +351,148 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
                                 <button type="button" class="bg-slate-50 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold py-1.5 rounded-md text-slate-700 text-center transition" onclick="setNominal(100000)">100k</button>
                             </div>
 
-                            <!-- INPUT NOMINAL UANG BAYAR -->
                             <div>
                                 <input type="number" name="bayar" id="input_bayar" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-base font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-impian-orange" placeholder="Nominal Uang Bayar" required>
                             </div>
 
-                            <!-- BUTTON PROSES TRANSAKSI -->
                             <button type="submit" name="proses_transaksi" class="w-full bg-impian-teal hover:bg-impian-darkteal text-white font-black py-2.5 rounded-xl shadow transition text-xs tracking-wider uppercase <?= empty($_SESSION['cart']) ? 'opacity-50 cursor-not-allowed' : '' ?>" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
                                 PROSES TRANSAKSI
                             </button>
-
                         </div>
-
                     </div>
                 </form>
             </div>
 
         </div>
+    </div>
 
+
+    <!-- ==================== CONTAINER TAB 2: RIWAYAT TRANSAKSI KASIR ==================== -->
+    <div id="tab-riwayat-content" class="hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-orange-500"></i>
+                    Riwayat Transaksi Kasir <?= $_SESSION['nama'] ?>
+                </h2>
+                <span class="text-xs font-semibold bg-orange-100 text-orange-700 px-3 py-1 rounded-full">
+                    Khusus Transaksi Anda
+                </span>
+            </div>
+            
+            <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                <table class="w-full text-left text-xs text-slate-600 relative border-collapse">
+                    <thead class="bg-slate-100 uppercase font-semibold text-slate-700 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="px-5 py-3.5 bg-slate-100">No Nota</th>
+                            <th class="px-5 py-3.5 bg-slate-100">Tanggal & Waktu</th>
+                            <th class="px-5 py-3.5 bg-slate-100 text-center">Metode Bayar</th>
+                            <th class="px-5 py-3.5 bg-slate-100 text-right">Total Bayar</th>
+                            <th class="px-5 py-3.5 bg-slate-100 text-center">Aksi / Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium">
+                        <?php if (mysqli_num_rows($res_riwayat_kasir) > 0): ?>
+                            <?php while ($row = mysqli_fetch_assoc($res_riwayat_kasir)): ?>
+                                <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="showDetailModal(<?= $row['id'] ?>)">
+                                    <td class="px-5 py-4 font-bold text-orange-600">
+                                        <?= $row['no_nota'] ?>
+                                    </td>
+                                    <td class="px-5 py-4 text-slate-500"><?= date('d-m-Y H:i', strtotime($row['created_at'])) ?></td>
+                                    <td class="px-5 py-4 text-center">
+                                        <span class="bg-teal-100 text-teal-700 font-bold px-3 py-1 rounded-full text-[10px] tracking-wider uppercase">
+                                            <?= strtoupper($row['metode_bayar']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-4 text-right font-bold text-slate-900 text-sm">
+                                        Rp <?= number_format($row['total_harga'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="px-5 py-4 text-center" onclick="event.stopPropagation();">
+                                        <button type="button" onclick="showDetailModal(<?= $row['id'] ?>)" class="bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto">
+                                            <i class="fa-solid fa-eye"></i> Detail
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" class="px-5 py-12 text-center text-slate-400 font-normal">
+                                    <i class="fa-regular fa-folder-open text-4xl mb-2 block text-slate-300"></i>
+                                    Belum ada riwayat transaksi yang Anda lakukan.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL POP-UP DETAIL TRANSAKSI (z-index 50) -->
+<div id="modalDetail" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all">
+        <!-- Modal Header -->
+        <div class="bg-impian-navy px-6 py-4 flex justify-between items-center text-white">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-amber-400 text-lg"></i>
+                <div>
+                    <h3 class="font-bold text-sm leading-none" id="modal-no-nota">INV-0000000</h3>
+                    <span class="text-[10px] text-slate-300" id="modal-tgl">00-00-0000 00:00</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeDetailModal()" class="text-white/70 hover:text-white text-xl font-bold">&times;</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs font-medium">
+                <span class="text-slate-500">Metode Pembayaran:</span>
+                <span class="font-bold text-teal-600 uppercase" id="modal-metode">-</span>
+            </div>
+
+            <!-- Tabel Produk -->
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[10px] border-b">
+                        <th class="py-2 px-2">Produk</th>
+                        <th class="py-2 px-2 text-right">Harga</th>
+                        <th class="py-2 px-2 text-center">QTY</th>
+                        <th class="py-2 px-2 text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-items-list" class="divide-y divide-slate-100 text-slate-700">
+                    <!-- Rincian Produk di-render via JavaScript -->
+                </tbody>
+            </table>
+
+            <!-- Ringkasan Total & Pembayaran -->
+            <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-xs border border-slate-200">
+                <div class="flex justify-between font-bold text-slate-800 text-sm">
+                    <span>Total Belanja:</span>
+                    <span class="text-orange-600" id="modal-total">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                    <span>Uang Bayar:</span>
+                    <span id="modal-bayar">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                    <span>Kembalian:</span>
+                    <span id="modal-kembalian">Rp 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="bg-slate-50 px-6 py-3 border-t flex justify-between items-center">
+            <a id="modal-link-cetak" href="#" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition flex items-center gap-1.5">
+                <i class="fa-solid fa-print"></i> Cetak Ulang Nota
+            </a>
+            <button type="button" onclick="closeDetailModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-lg transition">
+                Tutup
+            </button>
+        </div>
     </div>
 </div>
 
@@ -378,8 +515,56 @@ $products_list = mysqli_query($koneksi, "SELECT * FROM products WHERE stok > 0 O
 </div>
 
 <script>
-    $(document).ready(function() {
-        $('#select-produk').select2({
+    // Tab Navigation
+    function switchTab(tab) {
+        if (tab === 'pos') {
+            $('#tab-pos-content').removeClass('hidden');
+            $('#tab-riwayat-content').addClass('hidden');
+            $('#btn-tab-pos').addClass('bg-white text-impian-orange').removeClass('bg-white/10 text-white border border-white/30');
+            $('#btn-tab-riwayat').addClass('bg-white/10 text-white border border-white/30').removeClass('bg-white text-impian-orange');
+        } else {
+            $('#tab-pos-content').addClass('hidden');
+            $('#tab-riwayat-content').removeClass('hidden');
+            $('#btn-tab-riwayat').addClass('bg-white text-impian-orange').removeClass('bg-white/10 text-white border border-white/30');
+            $('#btn-tab-pos').addClass('bg-white/10 text-white border border-white/30').removeClass('bg-white text-impian-orange');
+        }
+    }
+
+    // Modal Detail Pop-up AJAX
+    function showDetailModal(transId) {
+        $.getJSON('get_detail_transaksi.php?id=' + transId, function(data) {
+            $('#modal-no-nota').text(data.no_nota);
+            $('#modal-tgl').text(data.created_at);
+            $('#modal-metode').text(data.metode_bayar);
+            $('#modal-total').text('Rp ' + data.total_harga);
+            $('#modal-bayar').text('Rp ' + data.bayar);
+            $('#modal-kembalian').text('Rp ' + data.kembalian);
+            $('#modal-link-cetak').attr('href', 'cetak_nota.php?id=' + transId);
+
+            let rows = '';
+            data.items.forEach(function(item) {
+                rows += `
+                    <tr>
+                        <td class="py-2 px-2 font-medium">${item.nama_barang}</td>
+                        <td class="py-2 px-2 text-right">Rp ${item.harga_jual}</td>
+                        <td class="py-2 px-2 text-center font-bold">${item.qty}</td>
+                        <td class="py-2 px-2 text-right font-bold text-orange-600">Rp ${item.subtotal}</td>
+                    </tr>
+                `;
+            });
+            $('#modal-items-list').html(rows);
+
+            $('#modalDetail').removeClass('hidden');
+        }).fail(function() {
+            alert('Gagal mengambil data detail transaksi.');
+        });
+    }
+
+    function closeDetailModal() {
+        $('#modalDetail').addClass('hidden');
+    }
+
+    $(document).ready(function() {$('#select-produk').select2({
             placeholder: '-- Cari Produk --',
             allowClear: true
         });
